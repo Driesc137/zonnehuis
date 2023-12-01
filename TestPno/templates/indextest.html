@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='knop.css') }}">
+    <style>
+        body {
+            background-color: #e6e8ed;
+            text-align: center;
+            color: #666666;
+        }
+
+        h1 {
+            color: #666666;
+        }
+        h2 {
+            color: #666666;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label, input, input[type="submit"] {
+            margin: 5px;
+        }
+
+        input[type="submit"] {
+            background-color: #666666;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 24px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button-on {
+            background-color: #00cc00;
+            color: #fff;
+        }
+
+        .button-off {
+            background-color: #cc0000;
+            color: #fff;
+        }
+
+        .hour-input {
+            width: 50px;
+        }
+
+        /* Verberg de invoervelden voor uren als de knop niet is ingedrukt */
+        .hour-section {
+            display: none;
+            flex-direction: column; /* Zet de invoervelden onder elkaar */
+        }
+        .apparaten {
+            display: none;
+            flex-direction: column; /* Zet de invoervelden onder elkaar */
+        }
+        .templates {
+            display: none;
+            flex-direction: column; /* Zet de invoervelden onder elkaar */
+        }
+
+
+        /* Laat de invoervelden zien als de knop is ingedrukt */
+        .button6-on .hour-section {
+            display: flex;
+        }
+        /* Stijlen voor de kolommen */
+        .column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Stijlen voor de knoppen binnen de kolommen */
+        .column button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kies Apparaten</h1>
+    <form action="/run-python" method="POST">
+            <button type="button" name="wasmachine" class="custom-button" onclick="toggleButton('wasmachine')">Wasmachine</button>
+            <button type="button" name="auto" class="custom-button" onclick="toggleButton('auto')">Auto</button>
+            <button type="button" name="keuken" class="custom-button" onclick="toggleButton('keuken')">Keuken</button>
+            <button type="button" name="verwarming" class="custom-button" onclick="toggleButton('verwarming')">Verwarming</button>
+            <input type="hidden" id="wasmachine" name="wasmachine" value="false">
+            <input type="hidden" id="auto" name="auto" value="false">
+            <input type="hidden" id="keuken" name="keuken" value="false">
+            <input type="hidden" id="verwarming" name="verwarming" value="false">
+        <h2>Datum</h2>
+        <button type="button" name="button1" class="custom-button" onclick="toggleButton('button1')">Datum</button>
+        <div class="apparaten">
+            <input type="date" id="selectedDate" class="date1-button" name="selectedDate">
+        </div>
+
+        <h2>Templates</h2>
+        <button type="button" name="template" class="custom-button" onclick="toggleButton('template')">Templates</button>
+        <div class="templates">
+            Kies 1 Per Kolom
+            <div class="buttons-container2">
+            <button type="button" name="warm" class="custom-button" onclick="toggleButton('warm')">Warm</button>
+            <button type="button" name="button3" class="custom-button" onclick="toggleButton('button3')">Veel Zon</button>
+            <button type="button" name="hoge_elec" class="custom-button" onclick="toggleButton('hoge_elec')">Hoge Elektriciteitsprijs</button>
+            <button type="button" name="gematigd" class="custom-button" onclick="toggleButton('gematigd')">Gematigd</button>
+            <button type="button" name="button4" class="custom-button" onclick="toggleButton('button4')">Weinig Zon</button>
+            <button type="button" name="fluc_elec" class="custom-button" onclick="toggleButton('fluc_elec')">Fluctuerende Elektriciteitsprijs</button>
+            <button type="button" name="koud" class="custom-button" onclick="toggleButton('koud')">Koud</button>
+            <button type="button" name="button5" class="custom-button" onclick="toggleButton('button5')">Geen Zon</button>
+            <button type="button" name="lage_elec" class="custom-button" onclick="toggleButton('lage_elec')">Lage Elektriciteitsprijs</button>
+            </div>
+            </div>
+        
+        
+        <h2>Custom Day</h2>
+        <button type="button" name="button6" class="custom-button" onclick="toggleButton('button6')">Custom Day</button>
+        
+        <br>
+        <input type="hidden" id="template" name="template" value="false">
+        <input type="hidden" id="button1" name="button1" value="false">
+        <input type="hidden" id="button2" name="button2" value="false">
+        <input type="hidden" id="button3" name="button3" value="false">
+        <input type="hidden" id="button4" name="button4" value="false">
+        <input type="hidden" id="button5" name="button5" value="false">
+        <input type="hidden" id="warm" name="warm" value="false">
+        <input type="hidden" id="gematigd" name="gematigd" value="false">
+        <input type="hidden" id="koud" name="koud" value="false">
+        <input type="hidden" id="hoge_elec" name="hoge_elec" value="false">
+        <input type="hidden" id="fluc_elec" name="fluc_elec" value="false">
+        <input type="hidden" id="lage_elec" name="lage_elec" value="false">
+        <input type="hidden" id="button6" name="button6" value="false">
+        
+        <!-- Voeg invoervelden toe voor elk uur -->
+        <div class="hour-section">
+            <!-- Herhaal dit blok voor elk uur (t/m hour23) -->
+            <label for="hour0">Uur 0:</label>
+            <input type="number" id="hour0" name="hour0" class="hour-input" placeholder="Temp">
+            <input type="number" name="price0" placeholder="Prijs">
+            <input type="number" name="solar0" placeholder="Zonnestraling">
+
+            <label for="hour1">Uur 1:</label>
+            <input type="number" id="hour1" name="hour1" class="hour-input" placeholder="Temp">
+            <input type="number" name="price1" placeholder="Prijs">
+            <input type="number" name="solar1" placeholder="Zonnestraling">
+
+            <!-- Herhaal dit blok voor elk uur (t/m hour23) -->
+            <label for="hour2">Uur 2:</label>
+            <input type="number" id="hour2" name="hour2" class="hour-input" placeholder="Temp">
+            <input type="number" name="price2" placeholder="Prijs">
+            <input type="number" name="solar2" placeholder="Zonnestraling">
+            
+            <label for="hour3">Uur 3:</label>
+            <input type="number" id="hour3" name="hour3" class="hour-input" placeholder="Temp">
+            <input type="number" name="price3" placeholder="Prijs">
+            <input type="number" name="solar3" placeholder="Zonnestraling">
+
+            <label for="hour4">Uur 4:</label>
+            <input type="number" id="hour4" name="hour4" class="hour-input" placeholder="Temp">
+            <input type="number" name="price4" placeholder="Prijs">
+            <input type="number" name="solar4" placeholder="Zonnestraling">
+
+            <label for="hour5">Uur 5:</label>
+            <input type="number" id="hour5" name="hour5" class="hour-input" placeholder="Temp">
+            <input type="number" name="price5" placeholder="Prijs">
+            <input type="number" name="solar5" placeholder="Zonnestraling">
+
+            <label for="hour6">Uur 6:</label>
+            <input type="number" id="hour6" name="hour6" class="hour-input" placeholder="Temp">
+            <input type="number" name="price6" placeholder="Prijs">
+            <input type="number" name="solar6" placeholder="Zonnestraling">
+
+            <label for="hour7">Uur 7:</label>
+            <input type="number" id="hour7" name="hour7" class="hour-input" placeholder="Temp">
+            <input type="number" name="price7" placeholder="Prijs">
+            <input type="number" name="solar7" placeholder="Zonnestraling">
+
+            <label for="hour8">Uur 8:</label>
+            <input type="number" id="hour8" name="hour8" class="hour-input" placeholder="Temp">
+            <input type="number" name="price8" placeholder="Prijs">
+            <input type="number" name="solar8" placeholder="Zonnestraling">
+
+            <label for="hour9">Uur 9:</label>
+            <input type="number" id="hour9" name="hour9" class="hour-input" placeholder="Temp">
+            <input type="number" name="price9" placeholder="Prijs">
+            <input type="number" name="solar9" placeholder="Zonnestraling">
+
+            <label for="hour10">Uur 10:</label>
+            <input type="number" id="hour10" name="hour10" class="hour-input" placeholder="Temp">
+            <input type="number" name="price10" placeholder="Prijs">
+            <input type="number" name="solar10" placeholder="Zonnestraling">
+
+            <label for="hour11">Uur 11:</label>
+            <input type="number" id="hour11" name="hour11" class="hour-input" placeholder="Temp">
+            <input type="number" name="price11" placeholder="Prijs">
+            <input type="number" name="solar11" placeholder="Zonnestraling">
+
+            <label for="hour12">Uur 12:</label>
+            <input type="number" id="hour12" name="hour12" class="hour-input" placeholder="Temp">
+            <input type="number" name="price12" placeholder="Prijs">
+            <input type="number" name="solar12" placeholder="Zonnestraling">
+
+            <label for="hour13">Uur 13:</label>
+            <input type="number" id="hour13" name="hour13" class="hour-input" placeholder="Temp">
+            <input type="number" name="price13" placeholder="Prijs">
+            <input type="number" name="solar13" placeholder="Zonnestraling">
+
+            <label for="hour14">Uur 14:</label>
+            <input type="number" id="hour14" name="hour14" class="hour-input" placeholder="Temp">
+            <input type="number" name="price14" placeholder="Prijs">
+            <input type="number" name="solar14" placeholder="Zonnestraling">
+
+            <label for="hour15">Uur 15:</label>
+            <input type="number" id="hour15" name="hour15" class="hour-input" placeholder="Temp">
+            <input type="number" name="price15" placeholder="Prijs">
+            <input type="number" name="solar" placeholder="Zonnestraling">
+
+            <label for="hour16">Uur 16:</label>
+            <input type="number" id="hour16" name="hour16" class="hour-input" placeholder="Temp">
+            <input type="number" name="price16" placeholder="Prijs">
+            <input type="number" name="solar16" placeholder="Zonnestraling">
+
+            <label for="hour17">Uur 17:</label>
+            <input type="number" id="hour17" name="hour17" class="hour-input" placeholder="Temp">
+            <input type="number" name="price17" placeholder="Prijs">
+            <input type="number" name="solar17" placeholder="Zonnestraling">
+
+            <label for="hour18">Uur 18:</label>
+            <input type="number" id="hour18" name="hour18" class="hour-input" placeholder="Temp">
+            <input type="number" name="price18" placeholder="Prijs">
+            <input type="number" name="solar18" placeholder="Zonnestraling">
+
+            <label for="hour19">Uur 19:</label>
+            <input type="number" id="hour19" name="hour19" class="hour-input" placeholder="Temp">
+            <input type="number" name="price19" placeholder="Prijs">
+            <input type="number" name="solar19" placeholder="Zonnestraling">
+
+            <label for="hour20">Uur 20:</label>
+            <input type="number" id="hour20" name="hour20" class="hour-input" placeholder="Temp">
+            <input type="number" name="price20" placeholder="Prijs">
+            <input type="number" name="solar20" placeholder="Zonnestraling">
+
+            <label for="hour21">Uur 21:</label>
+            <input type="number" id="hour21" name="hour21" class="hour-input" placeholder="Temp">
+            <input type="number" name="price21" placeholder="Prijs">
+            <input type="number" name="solar21" placeholder="Zonnestraling">
+
+            <label for="hour22">Uur 22:</label>
+            <input type="number" id="hour22" name="hour22" class="hour-input" placeholder="Temp">
+            <input type="number" name="price22" placeholder="Prijs">
+            <input type="number" name="solar22" placeholder="Zonnestraling">
+            <!-- Herhaal dit blok voor elk uur (t/m hour23) -->
+            <!-- ... Voeg hier invoervelden toe voor elk uur ... -->
+            <label for="hour23">Uur 23:</label>
+            <input type="number" id="hour23" name="hour23" class="hour-input" placeholder="Temp">
+            <input type="number" name="price23" placeholder="Prijs">
+            <input type="number" name="solar23" placeholder="Zonnestraling">
+        </div>
+
+        <br>
+        <input type="submit" value="Ga verder">
+    </form>
+
+    <script>
+        function toggleButton(buttonName) {
+            const button = document.getElementsByName(buttonName)[0];
+            const buttonInput = document.getElementById(buttonName);
+            buttonInput.value = (buttonInput.value === "false") ? "true" : "false";
+
+            // Voeg de juiste klasse toe op basis van de waarde van het inputveld
+            if (buttonInput.value === "true") {
+                button.classList.remove("button-off");
+                button.classList.add("button-on");
+            } else {
+                button.classList.remove("button-on");
+                button.classList.add("button-off");
+            }
+
+            // Verberg of toon de sectie op basis van de knopstatus van button 6
+            const hourSection = document.querySelector('.hour-section');
+            hourSection.style.display = (document.getElementById('button6').value === "true") ? "flex" : "none";
+            hourSection.classList.toggle('button6-on', document.getElementById('button6').value === "true");
+            const apparaten = document.querySelector('.apparaten');
+            apparaten.style.display = (document.getElementById('button1').value === "true") ? "flex" : "none";
+            apparaten.classList.toggle('button1-on', document.getElementById('button1').value === "true");
+            const templates = document.querySelector('.templates');
+            templates.style.display = (document.getElementById('template').value === "true") ? "flex" : "none";
+            templates.classList.toggle('template-on', document.getElementById('template').value === "true");
+        }
+    </script>
+</body>
+</html>
+
+
+
+

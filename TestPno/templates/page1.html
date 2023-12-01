@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Dashboard - Resultaat</title>
+    <style>
+        body {
+            background-color: #ffffff;
+            text-align: center;
+            display: grid;
+            grid-template-columns: 20% 40% 40%; /* 3 kolommen, zijbalk, eerste container, tweede container */
+            grid-template-rows: 100vh; /* Een rij van 100% van de viewport-hoogte */
+            grid-template-areas: 
+                "sidebar main1 main2"; /* Benoemde gebieden voor de lay-out */
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* Verberg de scrollbar */
+        }
+
+        h1 {
+            color: #007BFF;
+        }
+
+        p {
+            color: #fff;
+        }
+
+        .block-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .block-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .sidebar {
+            grid-area: sidebar; /* Plaats de zijbalk in het gebied 'sidebar' */
+            background-color: #333;
+            padding: 20px;
+            color: #fff;
+            overflow-y: auto; /* Voeg een scrollbar toe als de inhoud te groot is */
+        }
+
+        #sidebarCollapse {
+            font-size: 24px;
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1;
+        }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            overflow: auto; /* Voeg een scrollbar toe als de inhoud te groot is */
+        }
+
+        .chart-container {
+            box-sizing: border-box;
+            width: 80%;
+            margin: 15px;
+        }
+
+        .additional-block {
+            box-sizing: border-box;
+            width: 40%;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 15px;
+        }
+
+        .main-container:nth-child(1) {
+            height: 100%; /* 100% van de viewport-hoogte voor het eerste main-container */
+        }
+
+        .main-container:nth-child(2) {
+            height: 100%; /* 100% van de viewport-hoogte voor het tweede main-container */
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+        }
+
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: block;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #555;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div id="sidebarCollapse">☰</div>
+        <a href="page1.html">Pagina 1</a>
+        <a href="page2.html">Pagina 2</a>
+        <a href="page1.html">Pagina 3</a>
+        <!-- Voeg hier de koppelingen naar andere pagina's toe -->
+    </div>
+
+    <div class="main-container">
+        <div class="chart-container">
+            <canvas id="lineChart1"></canvas>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chart-container">
+            <canvas id="lineChart2"></canvas>
+        </div>
+
+        <div class="additional-blocks">
+            <div class="additional-block">
+                Inhoud van blok 3
+            </div>
+
+            <div class="additional-block">
+                Inhoud van blok 4
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#sidebarCollapse").on("click", function () {
+                $("#sidebar").toggleClass("active");
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='dashboard2.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard3.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard4.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard5.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard6.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard7.js') }}"></script>
+
+    <script>
+        document.body.addEventListener('click', function(e) {
+            console.log('Klik gedetecteerd op:', e.target);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+

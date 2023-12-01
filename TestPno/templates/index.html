@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Montserrat Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <div class="grid-container">
+
+      <!-- Header -->
+    
+      <!-- End Header -->
+
+      <!-- Sidebar -->
+      <aside id="sidebar">
+        <div class="sidebar-title">
+          <div class="sidebar-brand">
+            Zonnehuis
+          </div>
+          <span class="material-icons-outlined" onclick="closeSidebar()">close</span>
+        </div>
+
+        <ul class="sidebar-list">
+          <li class="sidebar-list-item">
+            <a href="page1.html" target="_blank">
+              <span class="material-icons-outlined">dashboard</span> Dashboard
+            </a>
+          </li>
+          <li class="sidebar-list-item">
+            <a href="page2.html" target="_blank">
+              <span class="material-icons-outlined">thermostat</span> Weer
+            </a>
+          </li>
+        </ul>
+      </aside>
+      <!-- End Sidebar -->
+
+      <!-- Main -->
+      <main class="main-container">
+        <div class="main-title">
+          <p class="font-weight-bold">DASHBOARD</p>
+        </div>
+
+        <div class="main-cards">
+
+          <div class="card">
+            <div class="card-inner">
+              <p class="text-primary">BATTERIJ PERCENTAGE</p>
+              <span class="material-icons-outlined text-orange">battery_full</span>
+                
+            </div>
+            <span class="text-primary font-weight-bold">249</span>
+          </div>
+
+          <div class="card">
+            <div class="card-inner">
+              <p class="text-primary">KOST MET OPTIMALISATIE</p>
+              <span class="material-icons-outlined text-green">paid</span>
+            </div>
+            <span class="text-primary font-weight-bold">83</span>
+          </div>
+
+          <div class="card">
+            <div class="card-inner">
+              <p class="text-primary">KOST ZONDER OPTIMALISATIE</p>
+              <span class="material-icons-outlined text-red">paid</span>
+            </div>
+            <span class="text-primary font-weight-bold">79</span>
+          </div>
+
+          <div class="card">
+            <div class="card-inner">
+              <p class="text-primary">GELD BESPAARD</p>
+              <span class="material-icons-outlined text-blue">savings</span>
+            </div>
+            <span class="text-primary font-weight-bold">56</span>
+          </div>
+
+        </div>
+
+        <div class="charts">
+
+          <div class="charts-card">
+            <p class="chart-title">Verbruik per product</p>
+            <div id="bar-chart"></div>
+            <p class="chart-title">Verbruik per product</p>
+            <div id="piechart"></div>
+          </div> 
+
+          <div class="charts-card" >
+            <p class="chart-title">PRODUCTIE EN CONSUMPTIE</p>
+            <div id="area-chart"></div>
+           
+
+              <div class="card" style = "border-left: 7px solid #367952;">
+                <div class="card-inner">
+                  <p class="text-primary">GEPRODUCEERD</p>
+                  <span class="material-icons-outlined text-green">solar_power</span>
+                    
+                </div>
+                <span class="text-primary font-weight-bold">{{ totaal_opgewekte_energie }}</span>
+              </div>
+    
+              <div class="card" style = "border-left: 7px solid #cc3c43;">
+                <div class="card-inner">
+                  <p class="text-primary">VERBRUIKT</p>
+                  <span class="material-icons-outlined text-red">wb_incandescent</span>
+                </div>
+                <span class="text-primary font-weight-bold">83</span>
+              </div>
+          
+
+        </div>
+      </main>
+      <!-- End Main -->
+
+    </div>
+
+    <!-- Scripts -->
+    <!-- ApexCharts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.35.3/apexcharts.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+  </body>
+</html>

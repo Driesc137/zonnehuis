@@ -1,11 +1,11 @@
 import random
-from Wiskundig_model_PnO.getfromDB import getFromDB
-from Wiskundig_model_PnO.getfromDB import getTempFromDB
-from Wiskundig_model_PnO.getfromDB import getFullCost
-from Wiskundig_model_PnO.getfromDB import getFullTempAndIr
-from Wiskundig_model_PnO.getfromDB import removeSpaces
-from Wiskundig_model_PnO.getfromDB import vervang_komma_door_punt
-from Wiskundig_model_PnO.Benader_warmte_model import benader_warmte_model
+from TestPno.TEST_controller.GetfromDB import getFromDB
+from TestPno.TEST_controller.GetfromDB import getTempFromDB
+from TestPno.TEST_controller.GetfromDB import getFullCost
+from TestPno.TEST_controller.GetfromDB import getFullTempAndIr
+from TestPno.TEST_controller.GetfromDB import removeSpaces
+from TestPno.TEST_controller.GetfromDB import vervang_komma_door_punt
+
 
 e_kost = list(reversed(getFullCost()))
 temp_en_ir = list(reversed(getFullTempAndIr()))

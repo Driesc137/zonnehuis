@@ -337,7 +337,7 @@ def getTempFromDB(date):
         9] + "T23:00:00"
     #print(datum0)
     mycursor = db.cursor()
-    query = "SELECT datum, temp, solarenergy FROM weer WHERE datum = %s"
+    query = "SELECT datum, temp, solarradiation FROM weer WHERE datum = %s"
 
     mycursor.execute(query, (datum0,))
     resultaat = mycursor.fetchone()
@@ -490,8 +490,8 @@ def getFullTempAndIr():
 #resultaten = getFullCost()
 
 #print(resultaten)
-resultaten = getFullTempAndIr()
-print(resultaten)
+'''resultaten = getFullTempAndIr()
+print(resultaten)'''
 
 # Test met een voorbeelddatum
 # result = print(getFromDB("2022-12-11"))

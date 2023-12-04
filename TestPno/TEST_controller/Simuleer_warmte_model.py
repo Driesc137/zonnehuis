@@ -1,7 +1,7 @@
 #Simulatie warmte model
 import numpy as np
 import matplotlib.pyplot as plt
-def simuleer_warmte_model(delta_T, P_in, T_out, S_rad, T_in_0, T_m_0):       # functie om het warmtemodel te simuleren
+def simuleer_warmte_model(delta_T, P_in,P_airco, T_out, S_rad, T_in_0, T_m_0):       # functie om het warmtemodel te simuleren
                                                                     # input:
                                                                     # vermogen (W) van de warmtepomp
                                                                     # buitentemperatuur (K)
@@ -16,12 +16,6 @@ def simuleer_warmte_model(delta_T, P_in, T_out, S_rad, T_in_0, T_m_0):       # f
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.integrate import solve_ivp
-
-    #string to float
-    T_out = float(T_out)                #omzetten van buitentemperatuur (K) in string naar float
-    S_rad = float(S_rad)                #omzetten van solar radiation (W) in string naar float
-    P_in = float(P_in)                  #omzetten van vermogen (W) in string naar float
-    '''Nodig voor P_in?'''
 
     #Celsius to Kelvin
     T_out = T_out + 273.15              #omzetten van buitentemperatuur van Celsius naar Kelvin
@@ -40,17 +34,18 @@ def simuleer_warmte_model(delta_T, P_in, T_out, S_rad, T_in_0, T_m_0):       # f
     R_vent = 7.98*10**(-3)              #warmteweerstand van temperatuurverlies door ventilatie (K/W)
     gA = 12                             #solar gain factor (m^2)
     frad = 0.3                          #distributiefactor van warmtepomp (constante)
-    CoP = 3                             #COP van de warmtepomp (constante) (arbitrair)
+    CoP = 4.5                             #COP van de warmtepomp (constante) (arbitrair)
+    EER = 7.5                             #EER van de airco (constante) (arbitrair)
 
     #Expleciete Runge-Kutta methode van orde 5(4)
-    def equations(t, state, P_in_eq, T_out_eq, S_rad_eq):
+    def equations(t, state, P_in_eq, P_airco_eq, T_out_eq, S_rad_eq):
         T_in_eq, T_m_eq = state
-        dT_in = (1/C_i)*(P_in_eq*(1-frad)*CoP - (T_in_eq-T_out_eq)/R_vent - (T_in_eq-T_m_eq)/R_i)
-        dT_m = (1/C_m)*(P_in_eq*frad*CoP+gA*S_rad_eq - (T_m_eq-T_out_eq)/R_e - (T_m_eq-T_in_eq)/R_i)
+        dT_in = (1/C_i)*((1-frad)*(CoP*P_in_eq - EER*P_airco_eq) - (T_in_eq-T_out_eq)/R_vent - (T_in_eq-T_m_eq)/R_i)
+        dT_m = (1/C_m)*(frad*(P_in_eq*CoP-EER*P_airco_eq)+gA*S_rad_eq - (T_m_eq-T_out_eq)/R_e - (T_m_eq-T_in_eq)/R_i)
         return [dT_in, dT_m]
 
     y0 = [T_in_0, T_m_0]        # Initial state of the system
-    p = (P_in, T_out, S_rad)    # Parameters to be passed to the function
+    p = (P_in, P_airco, T_out, S_rad)    # Parameters to be passed to the function
     t_span = (t0, t_end)
     teval = np.arange(60*60)
     oplossing = solve_ivp(equations, t_span, y0,t_eval=teval , args=p)
@@ -80,11 +75,11 @@ def simuleer_warmte_model(delta_T, P_in, T_out, S_rad, T_in_0, T_m_0):       # f
     T_m = oplossing.y[1, :]
     T_in_time = oplossing.t
     T_m_time = oplossing.t
-    T_in = [round(i-273.15,2) for i in T_in]
-    T_m = [round(i-273.15,2) for i in T_m]
-    T_in_time = [round(i/(60*60),2) for i in T_in_time]
-    T_m_time = [round(i/(60*60),2) for i in T_m_time]
-    return T_in, T_m, T_in_time, T_m_time                                      #terugsturen van de lijsten met binnentemperatuur en temperatuur van de bouwmassa
+    T_in = [round(i-273.15,4) for i in T_in]
+    T_m = [round(i-273.15,4) for i in T_m]
+    T_in_time = [round(i/(60*60),4) for i in T_in_time]
+    T_m_time = [round(i/(60*60),4) for i in T_m_time]
+    return T_in, T_m, T_in_time, T_m_time, oplossing                                      #terugsturen van de lijsten met binnentemperatuur en temperatuur van de bouwmassa
 
 #test
 #[T_in, T_m, T_in_time, T_m_time] = simuleer_warmte_model(0, 10, 0, 20, 20)

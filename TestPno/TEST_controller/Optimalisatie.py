@@ -140,7 +140,12 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
         elif keuken_einde > 0:
             for i in range(keuken_einde + 1, horizon + 1):
                 m.keuken_tijd_con.add(m.keuken[i] == 0)
-    else:
+    elif keuken_aan == 1:
+        keuken_con_expr = sum(m.keuken[i] for i in range(1, horizon + 1)) == keuken_aan  # wasmachine staat <wm_aan> tijdsintervallen aan
+        m.keuken_con = pe.Constraint(expr=keuken_con_expr)
+        keuken_con_expr2 = m.keuken[1] == keuken_aan                    # wasmachine staat onmiddellijk aan
+        m.keuken_con2 = pe.Constraint(expr=keuken_con_expr2)
+    elif keuken_aan == 0:
         m.keuken_con = pe.ConstraintList()
         for i in range(1, horizon + 1):
             m.keuken_con.add(m.keuken[i] == 0)

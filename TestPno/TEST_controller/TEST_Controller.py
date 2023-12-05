@@ -19,7 +19,7 @@ import numpy as np
 def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
     #constanten
     delta_t = 1                     # tijdsinterval (h)
-    horizon = 17                    # lengte van de horizon (h)
+    horizon = 24                    # lengte van de horizon (h)
     zp_opp = 46.2                   # oppervlakte zonnepaneel (m^2)
     eff = 0.2                       # efficientie zonnepaneel
     M = 1000                        # grote M. Wat is dit?
@@ -110,6 +110,10 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         for i in attributes:
             actions[i].append(opslag_resultaat['Iteratie', current_time][i][0])
 
+        #batterij update
+        bat0 = actions['batstate'][current_time] + actions['batcharge'][current_time] - actions['batdischarge'][current_time] #update de batterijtoestand voor de volgende iteratie
+
+
         #simuleer het warmte model van de huidige iteratie naar de volgende iteratie (tijdsvenster schuift op)
         [T_in, T_m, T_in_time, T_m_time, oplossing] = simuleer_warmte_model(delta_t, actions['wpsum'][current_time],actions['aircosum'][current_time],temp_out[current_time], irradiantie[current_time],T_in_0,T_m_0) #simulatie van het warmtemodel
         T_in_0 = T_in[-1]                                                      #begintemperatuur van de binnentemperatuur voor volgende iteratie
@@ -136,6 +140,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         print(current_time)
         current_time += 1                                                           #verschuif de horizon met 1 uur
 
+    #update batterij en temp laatste keer
+    actions['batstate'].append(bat0)
 
     #print(opslag_resultaat)
     print("----------------------------------")
@@ -262,6 +268,7 @@ T_in = [i-273.15 for i in T_in]
 T_m = [i-273.15 for i in T_m]
 T_in_time = [i/(60*60) for i in T_in_time]
 T_m_time = [i/(60*60) for i in T_m_time]
+print(f"Eerste tien T_in: {T_in[0:10]}")
 plt.plot(T_in_time, T_in, label='T_in')
 plt.plot(T_m_time, T_m, label='T_m')
 plt.xlabel('Tijd (uur)')                                #label x-as

@@ -1,3 +1,4 @@
+#laatste variabele in wp en airco wegdoen: staan hier constrains op?
 import pyomo.environ as pe
 import pyomo.opt as po
 
@@ -66,7 +67,7 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     m.batdischarge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het ontladen is in tijdsinterval i
     m.batcharge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij oplaadt in tijdsinterval i
     m.batdischarge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij ontlaadt in tijdsinterval i
-    m.batstate = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie er in de batterij zit in tijdsinterval i
+    m.batstate = pe.Var(pe.RangeSet(1, horizon+1),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie er in de batterij zit in tijdsinterval i
 
     #afhankelijke variabelen
     if wm_aan > 1:
@@ -246,22 +247,18 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     for i in range(1, horizon + 1):
         m.con_batcharge_simul.add(m.batcharge_aan[i] + m.batdischarge_aan[i] <= 1)
 
-    '''beginvoorwaarden batterij'''
-    '''bat_start_expr = m.batstate[1] == 0
-    m.bat_start_con = pe.Constraint(expr=bat_start_expr)'''
-
     '''batterijbalans'''
     m.con_batcharge = pe.ConstraintList()  # lijst met constraints: batterijbalans
-    m.con_batcharge.add(m.batstate[1] == batstart + m.batcharge[1] - m.batdischarge[1])
-    for i in range(2, horizon + 1):
-        m.con_batcharge.add(m.batstate[i] == m.batstate[i-1] + m.batcharge[i] - m.batdischarge[i])
+    m.con_batcharge.add(m.batstate[1] == batstart)
+    for i in range(2, horizon + 2):
+        m.con_batcharge.add(m.batstate[i] == m.batstate[i-1] + m.batcharge[i-1] - m.batdischarge[i-1])
 
     '''min max batterijcapaciteit'''
     m.con_batmax = pe.ConstraintList()  # lijst met constraints: batterijcapaciteit mag niet overschreden worden
     m.con_batmin = pe.ConstraintList()  # lijst met constraints: batterijcapaciteit mag niet negatief worden
-    for i in range(1, horizon + 1):
-        m.con_batmax.add(sum(m.batstate[i] for i in range(1,horizon+1)) <= batmax)
-        m.con_batmin.add(sum(m.batstate[i] for i in range(1,horizon+1)) >= batmin)
+    for i in range(1, horizon + 2):
+        m.con_batmax.add(sum(m.batstate[i] for i in range(1,horizon+2)) <= batmax)
+        m.con_batmin.add(sum(m.batstate[i] for i in range(1,horizon+2)) >= batmin)
 
     '''batterij opladen en ontladen'''
     m.con_batcharge_grenzen = pe.ConstraintList()  # lijst met constraints: batterij opladen en ontladen
@@ -290,7 +287,9 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     m.obj = pe.Objective(expr=kostprijs_energie, sense=pe.minimize)
 
     #los het probleem op
-    solver = po.SolverFactory('glpk')
+    '''solver = po.SolverFactory('glpk')
+    result = solver.solve(m)'''
+    solver = po.SolverFactory('gurobi_direct')
     result = solver.solve(m)
 
     #haal data uit resultaat en stuur terug
@@ -315,7 +314,12 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     resultaat['keuken'] = [pe.value(m.keuken[i]) for i in range(1, horizon + 1)]
     resultaat['batcharge'] = [pe.value(m.batcharge[i]) for i in range(1, horizon + 1)]
     resultaat['batdischarge'] = [pe.value(m.batdischarge[i]) for i in range(1, horizon + 1)]
-    resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, horizon + 1)]
+    resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, horizon + 2)]
     resultaat['batcharge_aan'] = [pe.value(m.batcharge_aan[i]) for i in range(1, horizon + 1)]
     resultaat['batdischarge_aan'] = [pe.value(m.batdischarge_aan[i]) for i in range(1, horizon + 1)]
+    #print alles van batterij
+    print("charge: ",resultaat['batcharge'])
+    print("discharge: ",resultaat['batdischarge'])
+    print("state: ",resultaat['batstate'])
+
     return resultaat

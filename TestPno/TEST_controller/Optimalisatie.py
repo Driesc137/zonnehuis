@@ -62,6 +62,8 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     m.wm = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de wasmachine aanstaat in tijdsinterval i
     m.auto = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de auto aanstaat in tijdsinterval i
     m.keuken = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de keuken aanstaat in tijdsinterval i
+    #m.batcharge = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het opladen is in tijdsinterval i
+    #m.batdischarge = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het ontladen is in tijdsinterval i
 
     #afhankelijke variabelen
     if wm_aan > 1:

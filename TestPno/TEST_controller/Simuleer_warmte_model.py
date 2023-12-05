@@ -50,7 +50,6 @@ def simuleer_warmte_model(delta_T, P_in,P_airco, T_out, S_rad, T_in_0, T_m_0):  
     teval = np.arange(60*60)
     oplossing = solve_ivp(equations, t_span, y0,t_eval=teval , args=p)
 
-
     '''#plot resultaten
     t = np.linspace(t0,t_end, n)                            #tijd wordt opgedeeld in n gelijke stukken van lengte h
     plt.figure("Temperatuur")                               #maak een figuur met naam "Temperatuur"

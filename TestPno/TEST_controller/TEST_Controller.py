@@ -16,7 +16,7 @@ from GetfromDB import getTempFromDB
 from Optimalisatie import optimaliseer
 import numpy as np
 
-def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, batterij, thuis):
+def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
     #constanten
     delta_t = 1                     # tijdsinterval (h)
     horizon = 24                    # lengte van de horizon (h)
@@ -177,13 +177,13 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     #bereken de kostrpijs_energie met de data opgeslagen in actions
     kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i]/1000 - (1/3)* actions['esell'][i] * netstroom[i]/1000 for i in range(0, total_time))
     #print("De oplossing is €", kostprijs_energie)
-    print(f"{"kostprijs_energie"}: {kostprijs_energie}")
+    print(f"kostprijs_energie: {kostprijs_energie}")
     print("----------------------------------")
     print(opslag_resultaat['Iteratie', 0]['result'])
     print("----------------------------------")
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie, opslag_resultaat]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
     #print(f"Geheugengrootte van de dictionary: {geheugengrootte_dict} bytes")
 
 testdag = '2022-02-13'
@@ -198,8 +198,8 @@ netstroom = getFromDB(testdag)
 booleanwm = True
 booleanauto = True
 booleankeuken = True
-thuis = False
-[A,B,C,D,E,F,G,H, I, J, K] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
+thuis = True
+[A,B,C,D,E,F,G,H, I, J, K, L] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
 
 print(f"netstroom: {netstroom}")
 print(f"min netstroom: {min(netstroom)}")
@@ -222,6 +222,13 @@ print(f"min_T_in: {min_T_in}")
 print(f"max_T_in: {max_T_in}")
 print(f"gem_T_in: {gem_T_in}")
 
+#print alle T_in uit opslag_simulatie
+print("----------------------------------")
+for i in range(0,24):
+    print(f"T_in_{i}: {L['Iteratie', i]['T_in']}")
+for i in range(0,24):
+    print(f"vermogen_{i}: {L['Iteratie', i]['wpsum']}")
+
 #maak een plot van de oplossing van de simulatie opslag (oplossing) over de hele dag: plak de lijsten uit oplossing.y en oplossing.t achter elkaar
 import matplotlib.pyplot as plt
 import numpy as np
@@ -230,10 +237,10 @@ T_m = []
 T_in_time = []
 T_m_time = []
 for i in range(0,24):
-    T_in = T_in + I['Iteratie', i][4].y[0, :].tolist()
-    T_m = T_m + I['Iteratie', i][4].y[1, :].tolist()
-    T_in_time = T_in_time + [elem + i*3600 for elem in I['Iteratie', i][4].t.tolist()]
-    T_m_time = T_m_time + [elem + i*3600 for elem in I['Iteratie', i][4].t.tolist()]
+    T_in = T_in + K['Iteratie', i][4].y[0, :].tolist()
+    T_m = T_m + K['Iteratie', i][4].y[1, :].tolist()
+    T_in_time = T_in_time + [elem + i*3600 for elem in K['Iteratie', i][4].t.tolist()]
+    T_m_time = T_m_time + [elem + i*3600 for elem in K['Iteratie', i][4].t.tolist()]
 T_in = [i-273.15 for i in T_in]
 T_m = [i-273.15 for i in T_m]
 T_in_time = [i/(60*60) for i in T_in_time]
@@ -246,6 +253,7 @@ plt.title('Binnen- en muurtemperatuur zonnehuis')     #titel van de grafiek
 plt.grid()                                              #raster op de grafiek
 plt.legend(loc='upper left')                           #legende linksboven
 plt.show()                                              #toon de grafieken
+
 
 
 

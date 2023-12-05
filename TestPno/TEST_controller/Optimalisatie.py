@@ -1,7 +1,7 @@
 import pyomo.environ as pe
 import pyomo.opt as po
 
-def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde):
+def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge):
 
     #defenitie functies
     def extend_list(L, N):              #functie om lijsten te verlengen
@@ -62,11 +62,11 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     m.wm = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de wasmachine aanstaat in tijdsinterval i
     m.auto = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de auto aanstaat in tijdsinterval i
     m.keuken = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de keuken aanstaat in tijdsinterval i
-    '''m.batcharge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het opladen is in tijdsinterval i
+    m.batcharge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het opladen is in tijdsinterval i
     m.batdischarge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het ontladen is in tijdsinterval i
     m.batcharge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij oplaadt in tijdsinterval i
     m.batdischarge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij ontlaadt in tijdsinterval i
-    m.batstate = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie er in de batterij zit in tijdsinterval i'''
+    m.batstate = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie er in de batterij zit in tijdsinterval i
 
     #afhankelijke variabelen
     if wm_aan > 1:
@@ -153,7 +153,7 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     '''energiebalans'''
     m.con_energiebalans = pe.ConstraintList()  # lijst met constraints: energiebalans
     for i in range(1, horizon + 1):
-        m.con_energiebalans.add(m.ebuy[i] - m.esell[i] == -zonne_energie[i - 1]/1000 + ewm * m.wm[i] * delta_t + eau * m.auto[i] + ekeuken * m.keuken[i] + m.wpsum[i]/1000 + m.aircosum[i]/1000)
+        m.con_energiebalans.add(m.ebuy[i] - m.esell[i] == -zonne_energie[i - 1]/1000 + ewm * m.wm[i] * delta_t + eau * m.auto[i] + ekeuken * m.keuken[i] + m.wpsum[i]/1000 + m.aircosum[i]/1000 - m.batcharge[i]/1000 + m.batdischarge[i]/1000)
 
     '''maximum vermogen wpsum en aircosum'''
     m.con_wp_sum_grenzen = pe.ConstraintList()  # lijst met constraints: warmtepomp tussen 0 en 4000 W
@@ -242,6 +242,34 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
         m.con_sellmax.add(m.esell[i] <= M*m.bverkoop[i])
 
     '''batterij niet tegelijk op en ontladen'''
+    m.con_batcharge_simul = pe.ConstraintList()
+    for i in range(1, horizon + 1):
+        m.con_batcharge_simul.add(m.batcharge_aan[i] + m.batdischarge_aan[i] <= 1)
+
+    '''beginvoorwaarden batterij'''
+    bat_start_expr = m.batstate[1] == 0
+    m.bat_start_con = pe.Constraint(expr=bat_start_expr)
+
+    '''batterijbalans'''
+    m.con_batcharge = pe.ConstraintList()  # lijst met constraints: batterijbalans
+    for i in range(2, horizon + 1):
+        m.con_batcharge.add(m.batstate[i] == m.batstate[i-1] + m.batcharge[i] - m.batdischarge[i])
+
+    '''min max batterijcapaciteit'''
+    m.con_batmax = pe.ConstraintList()  # lijst met constraints: batterijcapaciteit mag niet overschreden worden
+    m.con_batmin = pe.ConstraintList()  # lijst met constraints: batterijcapaciteit mag niet negatief worden
+    for i in range(1, horizon + 1):
+        m.con_batmax.add(m.batstate[i] <= batmax)
+        m.con_batmin.add(m.batstate[i] >= batmin)
+
+    '''batterij opladen en ontladen'''
+    m.con_batcharge_grenzen = pe.ConstraintList()  # lijst met constraints: batterij opladen en ontladen
+    for i in range(1, horizon + 1):
+        m.con_batcharge_grenzen.add(0 <= m.batcharge[i])
+        m.con_batcharge_grenzen.add(m.batcharge[i] <= m.batcharge_aan[i] * batmaxcharge)
+        m.con_batcharge_grenzen.add(0 <= m.batdischarge[i])
+        m.con_batcharge_grenzen.add(m.batdischarge[i] <= m.batdischarge_aan[i] * batmaxdischarge)
+
 
 
     #module: warmtepomp en airco niet tegelijk aan in 1 uur
@@ -284,4 +312,9 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     resultaat['aircosum'] = [pe.value(m.aircosum[i]) for i in range(1, horizon + 1)]
     resultaat['zonne_energie'] = [zonne_energie]
     resultaat['keuken'] = [pe.value(m.keuken[i]) for i in range(1, horizon + 1)]
+    resultaat['batcharge'] = [pe.value(m.batcharge[i]) for i in range(1, horizon + 1)]
+    resultaat['batdischarge'] = [pe.value(m.batdischarge[i]) for i in range(1, horizon + 1)]
+    resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, horizon + 1)]
+    resultaat['batcharge_aan'] = [pe.value(m.batcharge_aan[i]) for i in range(1, horizon + 1)]
+    resultaat['batdischarge_aan'] = [pe.value(m.batdischarge_aan[i]) for i in range(1, horizon + 1)]
     return resultaat

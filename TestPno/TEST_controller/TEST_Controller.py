@@ -20,7 +20,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     #constanten
     delta_t = 1                     # tijdsinterval (h)
     horizon = 24                    # lengte van de horizon (h)
-    zp_opp = 32                   # oppervlakte zonnepaneel (m^2)
+    zp_opp = 46.2                   # oppervlakte zonnepaneel (m^2)
     eff = 0.2                       # efficientie zonnepaneel
     M = 1000                        # grote M. Wat is dit?
     ewm = 2.5                       # verbruik wasmachine (kW = kWh/h)
@@ -59,6 +59,13 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
     T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
 
+    batmax = 10000                     #maximale batterijcapaciteit (kWh)
+    batmin = 0                      #minimale batterijcapaciteit (kWh)
+    bat0 = 0                        #begintoestand batterij (kWh)
+    batmaxcharge = 3000                #maximale laadsnelheid batterij (kW)
+    batmaxdischarge = 3000             #maximale ontlaadsnelheid batterij (kW)
+
+
     #haal data uit database
     temp_out = tempinput
     irradiantie = radiationinput
@@ -68,8 +75,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
 
     zonne_energie = [i * zp_opp * eff * 0.75 for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
     for i in zonne_energie:
-        if i > 4750:
-            zonne_energie[zonne_energie.index(i)] = 4750  # maximum vermogen van zonnepanelen is 4750 W
+        if i > 7000:
+            zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
     zonne_energie = [i *0.9 for i in zonne_energie]
 
     #horizon implementatie
@@ -77,7 +84,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     opslag_resultaat = {}                                                           #maak een dictionary om de resultaten van de optimalisatie in op te slaan
     opslag_simulatie = {}                                                          #maak een dictionary om de resultaten van de simulatie in op te slaan
     actions = {}                                                                    #maak een dictionary om de definitieve acties van de controller in op te slaan
-    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'wpsum', 'aircosum']      #maak een lijst met de attributen van de dictionary
+    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'wpsum', 'aircosum', 'batstate', 'batcharge', 'batdischarge']      #maak een lijst met de attributen van de dictionary
     for i in attributes:
         actions[i] = []                                                             #initialiseer een lijst voor elk attribuut in de dictionary
     actions['Binnentemperatuur'] = []                                               #initialiseer een lijst voor de binnentemperatuur
@@ -87,12 +94,12 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         # bepaal de horizon lengte, optimaliseer en sla de resultaten op
         if current_time + horizon <= total_time:
             horizon_end = current_time + horizon                                    #einde van de huidige horizon
-            opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde)     #optimalisatie a.d.h.v. benadering
+            opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge)     #optimalisatie a.d.h.v. benadering
 
         else:
             horizon_end = total_time                                                #einde van de huidige horizon, zorgt ervoor dat de controller niet verder dan de totale tijd optimaliseert
             new_horizon = horizon -((current_time + horizon) - total_time)          #nieuwe horizon die niet over totale tijd optimaliseert
-            opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end],  zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde)     #optimalisatie a.d.h.v. benadering
+            opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end],  zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge)     #optimalisatie a.d.h.v. benadering
 
         #controleer de acties die de controller heeft gekozen voor dit interval, deze worden de beginvoorwaarden voor het volgende interval
         wm_aan = wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0] #aantal uren dat de wasmachine nog aan moet staan
@@ -151,6 +158,12 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             aircosum_final = value
         elif key == 'Binnentemperatuur':
             T_in_final = value
+        elif key == 'batstate':
+            batstate_final = value
+        elif key == 'batcharge':
+            batcharge_final = value
+        elif key == 'batdischarge':
+            batdischarge_final = value
         print(f"{key}: {value}")
 
     print("----------------------------------")
@@ -199,9 +212,9 @@ netstroom = getFromDB(testdag)
 #netstroom = [-0.5, 189.91, 210.98, 188.41, -2, -1, 294.68, 316.63, 376.31, 370.89, 275.13, 267.75, 237.66, 189.53, 213.51, 185.24, 225.1, 333.5, -2, 469.17, -5, -5, 318.42, 284.3]
 #netstroom = [400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
 #haal netstroom van dag 1 uit database
-booleanwm = False
-booleanauto = False
-booleankeuken = False
+booleanwm = True
+booleanauto = True
+booleankeuken = True
 thuis = False
 [A,B,C,D,E,F,G,H, I, J, K, L, M] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
 
@@ -257,8 +270,6 @@ plt.title('Binnen- en muurtemperatuur zonnehuis')     #titel van de grafiek
 plt.grid()                                              #raster op de grafiek
 plt.legend(loc='upper left')                           #legende linksboven
 plt.show()                                              #toon de grafieken
-
-
 
 
 #testdag negatieve prijzen: 29 december, 3 jan!

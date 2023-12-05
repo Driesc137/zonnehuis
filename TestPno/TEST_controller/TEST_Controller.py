@@ -202,7 +202,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     print("----------------------------------")
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie, opslag_resultaat, kostprijs_energie]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
     #print(f"Geheugengrootte van de dictionary: {geheugengrootte_dict} bytes")
 
 testdag = '2022-06-03'
@@ -222,7 +222,7 @@ booleanwm = True
 booleanauto = True
 booleankeuken = True
 thuis = False
-[A,B,C,D,E,F,G,H, I, J, K, L, M] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
+[A,B,C,D,E,F,G,H, I, J, K, L, M, N, O, P] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
 
 print(f"netstroom: {netstroom}")
 print(f"min netstroom: {min(netstroom)}")

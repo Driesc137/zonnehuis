@@ -19,7 +19,7 @@ import numpy as np
 def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
     #constanten
     delta_t = 1                     # tijdsinterval (h)
-    horizon = 24                    # lengte van de horizon (h)
+    horizon = 12                    # lengte van de horizon (h)
     zp_opp = 32                   # oppervlakte zonnepaneel (m^2)
     eff = 0.2                       # efficientie zonnepaneel
     M = 1000                        # grote M. Wat is dit?
@@ -126,7 +126,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             keuken_einde = 0
         else:
             keuken_einde -= 1                                                       #verschuif het einde van de keuken met 1 uur
-
+        print(current_time)
         current_time += 1                                                           #verschuif de horizon met 1 uur
 
 
@@ -183,23 +183,28 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     print("----------------------------------")
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie, opslag_resultaat]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie, opslag_resultaat, kostprijs_energie]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
     #print(f"Geheugengrootte van de dictionary: {geheugengrootte_dict} bytes")
 
 testdag = '2022-02-13'
 dataset1 = getTempFromDB(testdag)                                       #haal temperatuur en irradiantie van dag 1 uit database
-temp_out = dataset1[0]
+#temp_out = dataset1[0]
 #temp_out = [30,25,28,29,30,26,25,29,29,30,30,30,30,30,30,30,30,30,31,31,31,31,28,29,31,31,31,31]#haal temperatuur uit dataset1 (°C)
+temp_out = [30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30]
+
 irradiantie = dataset1[1]
+print(irradiantie)
 #irradiantie = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]
-netstroom = getFromDB(testdag)
+
+#netstroom = getFromDB(testdag)
 #netstroom = [-0.5, 189.91, 210.98, 188.41, -2, -1, 294.68, 316.63, 376.31, 370.89, 275.13, 267.75, 237.66, 189.53, 213.51, 185.24, 225.1, 333.5, -2, 469.17, -5, -5, 318.42, 284.3]
+netstroom = [400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
 #haal netstroom van dag 1 uit database
 booleanwm = True
 booleanauto = True
 booleankeuken = True
 thuis = True
-[A,B,C,D,E,F,G,H, I, J, K, L] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
+[A,B,C,D,E,F,G,H, I, J, K, L, M] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
 
 print(f"netstroom: {netstroom}")
 print(f"min netstroom: {min(netstroom)}")
@@ -222,12 +227,12 @@ print(f"min_T_in: {min_T_in}")
 print(f"max_T_in: {max_T_in}")
 print(f"gem_T_in: {gem_T_in}")
 
-#print alle T_in uit opslag_simulatie
+'''#print alle T_in uit opslag_simulatie
 print("----------------------------------")
 for i in range(0,24):
     print(f"T_in_{i}: {L['Iteratie', i]['T_in']}")
 for i in range(0,24):
-    print(f"vermogen_{i}: {L['Iteratie', i]['wpsum']}")
+    print(f"vermogen_{i}: {L['Iteratie', i]['wpsum']}")'''
 
 #maak een plot van de oplossing van de simulatie opslag (oplossing) over de hele dag: plak de lijsten uit oplossing.y en oplossing.t achter elkaar
 import matplotlib.pyplot as plt

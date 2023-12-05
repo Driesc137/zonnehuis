@@ -62,8 +62,11 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     m.wm = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de wasmachine aanstaat in tijdsinterval i
     m.auto = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de auto aanstaat in tijdsinterval i
     m.keuken = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de keuken aanstaat in tijdsinterval i
-    #m.batcharge = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het opladen is in tijdsinterval i
-    #m.batdischarge = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het ontladen is in tijdsinterval i
+    '''m.batcharge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het opladen is in tijdsinterval i
+    m.batdischarge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het ontladen is in tijdsinterval i
+    m.batcharge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij oplaadt in tijdsinterval i
+    m.batdischarge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij ontlaadt in tijdsinterval i
+    m.batstate = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie er in de batterij zit in tijdsinterval i'''
 
     #afhankelijke variabelen
     if wm_aan > 1:
@@ -126,6 +129,8 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
 
     '''keuken'''
     if keuken_aan > 0:
+        keuken_con_expr = sum(m.keuken[i] for i in range(1, horizon + 1)) == keuken_aan  # wasmachine staat <wm_aan> tijdsintervallen aan
+        m.keuken_con = pe.Constraint(expr=keuken_con_expr)
         m.keuken_tijd_con = pe.ConstraintList()
         if keuken_begin > 0:
             for i in range(1, keuken_begin + 1):
@@ -231,7 +236,7 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     for i in range(1,horizon+1):
         m.con_sellmax.add(m.esell[i] <= M*m.bverkoop[i])
 
-    '''batterij'''
+    '''batterij niet tegelijk op en ontladen'''
 
 
     #module: warmtepomp en airco niet tegelijk aan in 1 uur

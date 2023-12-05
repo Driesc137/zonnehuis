@@ -16,7 +16,7 @@ from GetfromDB import getTempFromDB
 from Optimalisatie import optimaliseer
 import numpy as np
 
-def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
+def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, batterij, thuis):
     #constanten
     delta_t = 1                     # tijdsinterval (h)
     horizon = 24                    # lengte van de horizon (h)
@@ -170,7 +170,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     print(f"airco_aan: {airco_aan}")
     print("----------------------------------")
     print(f"zonne_energie: {zonne_energie}")
-    print(f"zonne_energie_sum: {sum(zonne_energie)}")
+    zonne_energie_sum = sum(zonne_energie)
+    print(f"zonne_energie_sum: {zonne_energie_sum}")
     print("----------------------------------")
 
     #bereken de kostrpijs_energie met de data opgeslagen in actions
@@ -182,7 +183,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     print("----------------------------------")
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, opslag_simulatie]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
     #print(f"Geheugengrootte van de dictionary: {geheugengrootte_dict} bytes")
 
 testdag = '2022-02-13'
@@ -198,7 +199,7 @@ booleanwm = True
 booleanauto = True
 booleankeuken = True
 thuis = False
-[A,B,C,D,E,F,G,H, I] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
+[A,B,C,D,E,F,G,H, I, J, K] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
 
 print(f"netstroom: {netstroom}")
 print(f"min netstroom: {min(netstroom)}")

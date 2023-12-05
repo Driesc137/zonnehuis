@@ -1,7 +1,7 @@
 import pyomo.environ as pe
 import pyomo.opt as po
 
-def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge):
+def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, batstart):
 
     #defenitie functies
     def extend_list(L, N):              #functie om lijsten te verlengen
@@ -247,11 +247,12 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
         m.con_batcharge_simul.add(m.batcharge_aan[i] + m.batdischarge_aan[i] <= 1)
 
     '''beginvoorwaarden batterij'''
-    bat_start_expr = m.batstate[1] == 0
-    m.bat_start_con = pe.Constraint(expr=bat_start_expr)
+    '''bat_start_expr = m.batstate[1] == 0
+    m.bat_start_con = pe.Constraint(expr=bat_start_expr)'''
 
     '''batterijbalans'''
     m.con_batcharge = pe.ConstraintList()  # lijst met constraints: batterijbalans
+    m.con_batcharge.add(m.batstate[1] == batstart + m.batcharge[1] - m.batdischarge[1])
     for i in range(2, horizon + 1):
         m.con_batcharge.add(m.batstate[i] == m.batstate[i-1] + m.batcharge[i] - m.batdischarge[i])
 
@@ -259,8 +260,8 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     m.con_batmax = pe.ConstraintList()  # lijst met constraints: batterijcapaciteit mag niet overschreden worden
     m.con_batmin = pe.ConstraintList()  # lijst met constraints: batterijcapaciteit mag niet negatief worden
     for i in range(1, horizon + 1):
-        m.con_batmax.add(m.batstate[i] <= batmax)
-        m.con_batmin.add(m.batstate[i] >= batmin)
+        m.con_batmax.add(sum(m.batstate[i] for i in range(1,horizon+1)) <= batmax)
+        m.con_batmin.add(sum(m.batstate[i] for i in range(1,horizon+1)) >= batmin)
 
     '''batterij opladen en ontladen'''
     m.con_batcharge_grenzen = pe.ConstraintList()  # lijst met constraints: batterij opladen en ontladen

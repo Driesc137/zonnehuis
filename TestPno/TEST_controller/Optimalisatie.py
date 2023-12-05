@@ -317,9 +317,5 @@ def optimaliseer(horizon, irradiantie, netstroom, zp_opp, eff, ewm, eau, ekeuken
     resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, horizon + 2)]
     resultaat['batcharge_aan'] = [pe.value(m.batcharge_aan[i]) for i in range(1, horizon + 1)]
     resultaat['batdischarge_aan'] = [pe.value(m.batdischarge_aan[i]) for i in range(1, horizon + 1)]
-    #print alles van batterij
-    print("charge: ",resultaat['batcharge'])
-    print("discharge: ",resultaat['batdischarge'])
-    print("state: ",resultaat['batstate'])
 
     return resultaat

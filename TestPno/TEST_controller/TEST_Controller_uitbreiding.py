@@ -62,7 +62,11 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         T_in_max = 22                   # maximale binnentemperatuur (Celsius)
         T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
         T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
-
+        T_nothome_min = 16  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+        if max(tempinput) > 25:
+            T_nothome_max = max(tempinput)  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+        else:
+            T_nothome_max = 25  # maximale binnentemperatuur als er niemand thuis is (Celsius)
         batmax = 10000                     #maximale batterijcapaciteit (kWh)
         batmin = 0                      #minimale batterijcapaciteit (kWh)
         bat0 = 0                        #begintoestand batterij (kWh)
@@ -113,12 +117,12 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
             # bepaal de horizon lengte, optimaliseer en sla de resultaten op
             if current_time + horizon <= total_time:
                 horizon_end = current_time + horizon                                    #einde van de huidige horizon
-                opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end],ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
+                opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end],ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
             else:
                 horizon_end = total_time                                                #einde van de huidige horizon, zorgt ervoor dat de controller niet verder dan de totale tijd optimaliseert
                 new_horizon = horizon -((current_time + horizon) - total_time)          #nieuwe horizon die niet over totale tijd optimaliseert
-                opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end], ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
+                opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end], ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max,thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
             #controleer de acties die de controller heeft gekozen voor dit interval, deze worden de beginvoorwaarden voor het volgende interval
             wm_aan = wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0] #aantal uren dat de wasmachine nog aan moet staan
@@ -176,6 +180,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
             #reset de acties voor de volgende dag
             if (current_time % 24 == 0) and current_time != 0:
+                print("Dag")
                 [aankomst, vertrek, keuken_begin, keuken_einde, wm_aan, auto_aan, keuken_aan] = reset(thuis, wm_boolean,auto_boolean,keuken_boolean)
 
         #update batterij en temp laatste keer
@@ -224,7 +229,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         print("----------------------------------")
 
         #bereken de kostrpijs_energie met de data opgeslagen in actions
-        kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i]/1000 - (1/3)* actions['esell'][i] * netstroom[i]/1000 for i in range(0, total_time))
+        kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1/3)* actions['esell'][i] * netstroom[i] for i in range(0, total_time))
         #print("De oplossing is €", kostprijs_energie)
         print(f"kostprijs_energie: {kostprijs_energie}")
         print("----------------------------------")
@@ -300,7 +305,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     print(f"airco_actions: {airco_actions}")'''
     #print batterij
     print("----------------------------------")
-    import pandas as pd
+    '''import pandas as pd
 
     def create_dataframe(list1, list2,list3):
         # make all lists the same size
@@ -381,8 +386,8 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     plt.title('Buitentemperatuur zonnehuis')     #titel van de grafiek
     plt.grid()                                              #raster op de grafiek
     plt.legend(loc='upper left')                           #legende linksboven
-    plt.show()                                              #toon de grafieken
+    plt.show()                                              #toon de grafieken'''
 
     return auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final
 
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-11-09', 3, False, True, True, True)
+[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-01-01', 70, False, True, True, True)

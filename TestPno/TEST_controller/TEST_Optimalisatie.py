@@ -165,8 +165,8 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_wp.add(m.T_m[i] == m.T_m[i - 1] + h * (1 / C_m) * (frad * (CoP * m.wp[i-1] - EER * m.airco[i-1])+ gA * S_rad[i - 2] - (m.T_m[i - 1] - T_out[i - 2]) / R_e - (m.T_m[i - 1] - m.T_in[i - 1]) / R_i))
 
     '''temperatuur grenzen'''
-    print(T_nothome_max, 'max')
-    print(T_nothome_min, 'min')
+    '''print(T_nothome_max, 'max')
+    print(T_nothome_min, 'min')'''
     m.con_temp_grenzen = pe.ConstraintList()  # lijst met constraints: T_in en T_m tussen 18 en 22 graden
     if thuis:
         for i in range(2, N*(horizon + 1)):

@@ -21,7 +21,7 @@ verbruik_keuken = 3.3905
 
 def standaarddag(ekost, radiantie):
     def zonnepaneelE(radiantie):
-        if (radiantie * 0.2 * 46.2)/1000>6.3
+        if (radiantie * 0.2 * 46.2)/1000>6.3:
             return 6.3
         else:
             return (radiantie * 0.2 * 46.2)/1000

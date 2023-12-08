@@ -1,7 +1,7 @@
 import pyomo.environ as pe
 import pyomo.opt as po
 
-def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, batstart):
+def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, batstart):
 
     #defenitie functies
     def extend_list(L, N):              #functie om lijsten te verlengen
@@ -165,6 +165,8 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_wp.add(m.T_m[i] == m.T_m[i - 1] + h * (1 / C_m) * (frad * (CoP * m.wp[i-1] - EER * m.airco[i-1])+ gA * S_rad[i - 2] - (m.T_m[i - 1] - T_out[i - 2]) / R_e - (m.T_m[i - 1] - m.T_in[i - 1]) / R_i))
 
     '''temperatuur grenzen'''
+    print(T_nothome_max, 'max')
+    print(T_nothome_min, 'min')
     m.con_temp_grenzen = pe.ConstraintList()  # lijst met constraints: T_in en T_m tussen 18 en 22 graden
     if thuis:
         for i in range(2, N*(horizon + 1)):
@@ -174,17 +176,32 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
             m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
     if not thuis:
         if aankomst > 0:
+            '''for i in range(2, aankomst*N):
+                m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
+                m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
+                m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
             for i in range(aankomst*N, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
+            '''for i in range(N*(vertrek + 1), N*(horizon) + 1):
+                m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
+                m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
+                m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
         elif vertrek > 0:
             for i in range(2, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
+            '''for i in range(N*(vertrek + 1), N*(horizon) + 1):
+                m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
+                m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
+                m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
 
     '''wpsum en aircosum'''
     m.con_wpsum = pe.ConstraintList()  # lijst met constraints: wpsum is de som van wp over N tijdsintervallen --> len(wpsum) = horizon ipv N*horizon
@@ -242,20 +259,6 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_batcharge_grenzen.add(m.batcharge[i] <= m.batcharge_aan[i] * batmaxcharge)
         m.con_batcharge_grenzen.add(0 <= m.batdischarge[i])
         m.con_batcharge_grenzen.add(m.batdischarge[i] <= m.batdischarge_aan[i] * batmaxdischarge)
-
-
-
-    #module: warmtepomp en airco niet tegelijk aan in 1 uur
-    '''m.wpsum_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de warmtepomp aanstaat in tijdsinterval i
-    m.aircosum_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de airco aanstaat in tijdsinterval i
-    m.con_wp_sum_grenzen = pe.ConstraintList()  # lijst met constraints: warmtepomp tussen 0 en 4000 W
-    for i in range(1, horizon + 1):
-        m.con_wp_sum_grenzen.add(0 <= m.wpsum[i])
-        m.con_wp_sum_grenzen.add(m.wpsum[i] <= m.wpsum_aan * P_max)
-    m.con_airco_grenzen = pe.ConstraintList()  # lijst met constraints: airco tussen 0 en 4000 W
-    for i in range(1, horizon + 1):
-        m.con_airco_grenzen.add(0 <= m.aircosum[i])
-        m.con_airco_grenzen.add(m.aircosum[i] <= m.aircosum_aan * P_max_airco)'''
 
     # objectieffunctie
     kostprijs_energie = sum(netstroom[i - 1] * (m.ebuy[i] - 1 / 3 * m.esell[i]) for i in range(1,horizon + 1))  # hoe weten we dat verkoopprijs altijd exact 1/3 is van aankoopprijs?

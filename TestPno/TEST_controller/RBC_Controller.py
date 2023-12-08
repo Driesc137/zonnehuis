@@ -1,7 +1,7 @@
 import pyomo.environ as pe
 import pyomo.opt as po
 
-def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, batstart):
+def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, T_out, P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, batstart):
 
     #defenitie functies
     def extend_list(L, N):              #functie om lijsten te verlengen
@@ -34,10 +34,6 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
     S_rad = extend_list(irradiantie, N)  # lengte van lijst met solar radiation (W) aanpassen
 
     # vaste variabelen
-    m.bkoop = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of we energie kopen in tijdsinterval i
-    m.bverkoop = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of we energie verkopen in tijdsinterval i
-    m.ebuy = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie we kopen in tijdsinterval i
-    m.esell = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie we verkopen in tijdsinterval i
     m.wp = pe.Var(pe.RangeSet(1, N*horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de warmtepomp verbruikt per tijdsinterval i/2
     m.T_in = pe.Var(pe.RangeSet(1, N*(horizon+1)),within=pe.Reals)  # reële variabele die de binnentemperatuur aangeeft per tijdsinterval i/2
     m.T_m = pe.Var(pe.RangeSet(1, N*(horizon+1)),within=pe.Reals)  # reële variabele die de temperatuur van de bouwmassa aangeeft per tijdsinterval i/2
@@ -46,26 +42,6 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
     m.aircosum = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de airco verbruikt per tijdsinterval i (=som van m.airco over N tijdsintervallen)
     m.wp_aan = pe.Var(pe.RangeSet(1, N*horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de warmtepomp aanstaat in tijdsinterval i/2
     m.airco_aan = pe.Var(pe.RangeSet(1, N*horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de airco aanstaat in tijdsinterval i/2
-    m.wm = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de wasmachine aanstaat in tijdsinterval i
-    m.auto = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de auto aanstaat in tijdsinterval i
-    m.keuken = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de keuken aanstaat in tijdsinterval i
-    m.batcharge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het opladen is in tijdsinterval i
-    m.batdischarge_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de batterij aan het ontladen is in tijdsinterval i
-    m.batcharge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij oplaadt in tijdsinterval i
-    m.batdischarge = pe.Var(pe.RangeSet(1, horizon),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie de batterij ontlaadt in tijdsinterval i
-    m.batstate = pe.Var(pe.RangeSet(1, horizon+1),within=pe.NonNegativeReals)  # reële variabele die aangeeft hoeveel energie er in de batterij zit in tijdsinterval i
-
-    #afhankelijke variabelen
-    if wm_aan > 1:
-        m.wm_start = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de wasmachine start in tijdsinterval i
-    if keuken_aan > 1:
-        m.keuken_start = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de keuken start in tijdsinterval i
-
-    # constraints
-    '''bkoop bverkoop'''
-    m.conb = pe.ConstraintList()  # lijst met constraints: men kan niet tegelijk kopen en verkopen
-    for i in range(1, horizon + 1):
-        m.conb.add(m.bkoop[i] + m.bverkoop[i] <= 1)
 
     '''auto'''
     if thuis:
@@ -174,30 +150,15 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
             m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
     if not thuis:
         if aankomst > 0:
-            '''for i in range(2, aankomst * N):
-                m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
-                m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
-                m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
-            for i in range(aankomst * N, N * (vertrek + 1)):
+            for i in range(aankomst*N, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
-            '''for i in range(N * (vertrek + 1), N * (horizon + 1)):
-                m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
-                m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
-                m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
         elif vertrek > 0:
-            for i in range(2, N * (vertrek + 1)):
+            for i in range(2, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
-                m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
-            for i in range(N * (vertrek + 1), N * (horizon + 1)):
-                m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
-                m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
 
@@ -259,29 +220,39 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_batcharge_grenzen.add(m.batdischarge[i] <= m.batdischarge_aan[i] * batmaxdischarge)
 
 
+
+    #module: warmtepomp en airco niet tegelijk aan in 1 uur
+    '''m.wpsum_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de warmtepomp aanstaat in tijdsinterval i
+    m.aircosum_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de airco aanstaat in tijdsinterval i
+    m.con_wp_sum_grenzen = pe.ConstraintList()  # lijst met constraints: warmtepomp tussen 0 en 4000 W
+    for i in range(1, horizon + 1):
+        m.con_wp_sum_grenzen.add(0 <= m.wpsum[i])
+        m.con_wp_sum_grenzen.add(m.wpsum[i] <= m.wpsum_aan * P_max)
+    m.con_airco_grenzen = pe.ConstraintList()  # lijst met constraints: airco tussen 0 en 4000 W
+    for i in range(1, horizon + 1):
+        m.con_airco_grenzen.add(0 <= m.aircosum[i])
+        m.con_airco_grenzen.add(m.aircosum[i] <= m.aircosum_aan * P_max_airco)'''
+
     # objectieffunctie
     kostprijs_energie = sum(netstroom[i - 1] * (m.ebuy[i] - 1 / 3 * m.esell[i]) for i in range(1,horizon + 1))  # hoe weten we dat verkoopprijs altijd exact 1/3 is van aankoopprijs?
     m.obj = pe.Objective(expr=kostprijs_energie, sense=pe.minimize)
 
     #los het probleem op
+    '''solver = po.SolverFactory('glpk')
+    result = solver.solve(m)'''
+
     solver = po.SolverFactory('gurobi_direct')
     result = solver.solve(m)
 
     #haal data uit resultaat en stuur terug
     resultaat = {}
-    resultaat['wp'] = [pe.value(m.wp[i]) for i in range(1, 3)] #lijst met vermogen van de warmtepomp (W) per half uur
-    resultaat['wpsum'] = [pe.value(m.wpsum[i]) for i in range(1, 2)] #lijst met vermogen van de warmtepomp (W) per uur
-    resultaat['T_in'] = [round(pe.value(m.T_in[i])-273.15,2) for i in range(1, 3)] #lijst met binnentemperaturen (Celsius) per half uur
-    resultaat['T_m'] = [round(pe.value(m.T_m[i])-273.15) for i in range(1, 3)] #lijst met temperaturen van de bouwmassa (Celsius) per half uur
-    resultaat['auto'] = [pe.value(m.auto[i]) for i in range(1, 2)] #lijst met auto aan/uit (0/1) per uur
-    resultaat['wm'] = [pe.value(m.wm[i]) for i in range(1, 2)] #lijst met wasmachine aan/uit (0/1) per uur
-    resultaat['ebuy'] = [pe.value(m.ebuy[i]) for i in range(1, 2)] #lijst met energie die we kopen (kWh) per uur
-    resultaat['esell'] = [pe.value(m.esell[i]) for i in range(1, 2)] #lijst met energie die we verkopen (kWh) per uur
-    resultaat['airco'] = [pe.value(m.airco[i]) for i in range(1, 3)]
-    resultaat['aircosum'] = [pe.value(m.aircosum[i]) for i in range(1, 2)]
-    resultaat['keuken'] = [pe.value(m.keuken[i]) for i in range(1, 2)]
-    resultaat['batcharge'] = [pe.value(m.batcharge[i]) for i in range(1, 2)]
-    resultaat['batdischarge'] = [pe.value(m.batdischarge[i]) for i in range(1, 2)]
-    resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, 2)]
+    resultaat['result'] = result
+    resultaat['wp'] = [pe.value(m.wp[i]) for i in range(1, N*horizon + 1)] #lijst met vermogen van de warmtepomp (W) per half uur
+    resultaat['wpsum'] = [pe.value(m.wpsum[i]) for i in range(1, horizon + 1)] #lijst met vermogen van de warmtepomp (W) per uur
+    resultaat['T_in'] = [round(pe.value(m.T_in[i])-273.15,2) for i in range(1, N*horizon + 1)] #lijst met binnentemperaturen (Celsius) per half uur
+    resultaat['T_m'] = [round(pe.value(m.T_m[i])-273.15,2) for i in range(1, N*horizon + 1)] #lijst met temperaturen van de bouwmassa (Celsius) per half uur
+    resultaat['kostprijs_energie'] = pe.value(kostprijs_energie) #kostprijs van de energie (euro)
+    resultaat['airco'] = [pe.value(m.airco[i]) for i in range(1, N*horizon + 1)]
+    resultaat['aircosum'] = [pe.value(m.aircosum[i]) for i in range(1, horizon + 1)]
 
     return resultaat

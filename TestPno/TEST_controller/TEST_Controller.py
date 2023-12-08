@@ -227,7 +227,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
 
     return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
 
-testdag = '2022-11-09'
+testdag = '2022-05-05'
 dataset1 = getTempFromDB(testdag)                                       #haal temperatuur en irradiantie van dag 1 uit database
 temp_out = dataset1[0]
 #temp_out = [30,25,28,29,30,26,25,29,29,30,30,30,30,30,30,30,30,30,31,31,31,31,28,29,31,31,31,31]#haal temperatuur uit dataset1 (°C)
@@ -312,7 +312,7 @@ df = create_dataframe(batstate_final, batcharge_final, batdischarge_final)
 print(df)
 df3 = create_dataframe(wp_actions, airco_actions, T_in_final)
 print(df3)
-def create_dataframe2(list1, list2,list3,list4,list5,list6,list7,list8,list9,list10,list11,list12):
+def create_dataframe2(list1, list2,list3,list4,list5,list6,list7,list9,list10,list11,list12):
     # make all lists the same size
     list1 = [round(i,4) for i in list1]
     list2 = [round(i,4) for i in list2]
@@ -321,12 +321,11 @@ def create_dataframe2(list1, list2,list3,list4,list5,list6,list7,list8,list9,lis
     list5 = [round(i,4) for i in list5]
     list6 = [round(i,4) for i in list6]
     list7 = [round(i,4) for i in list7]
-    list8 = [round(i,4) for i in list8]
     list9 = [round(i,4) for i in list9]
     list10 = [round(i,4) for i in list10]
     list11 = [round(i,4) for i in list11]
     list12 = [round(i,4) for i in list12]
-    max_len = max(len(list1), len(list2), len(list3), len(list4), len(list5), len(list6), len(list7), len(list8), len(list9), len(list10), len(list11), len(list12))
+    max_len = max(len(list1), len(list2), len(list3), len(list4), len(list5), len(list6), len(list7), len(list9), len(list10), len(list11), len(list12))
     list1 += [None] * (max_len - len(list1))
     list2 += [None] * (max_len - len(list2))
     list3 += [None] * (max_len - len(list3))
@@ -334,7 +333,6 @@ def create_dataframe2(list1, list2,list3,list4,list5,list6,list7,list8,list9,lis
     list5 += [None] * (max_len - len(list5))
     list6 += [None] * (max_len - len(list6))
     list7 += [None] * (max_len - len(list7))
-    list8 += [None] * (max_len - len(list8))
     list9 += [None] * (max_len - len(list9))
     list10 += [None] * (max_len - len(list10))
     list11 += [None] * (max_len - len(list11))
@@ -342,7 +340,7 @@ def create_dataframe2(list1, list2,list3,list4,list5,list6,list7,list8,list9,lis
     df = pd.DataFrame({'Auto': list1, 'Wasmachine': list2, 'Keuken': list3, 'Ebuy': list4, 'Esell': list5, 'Wpsum': list6, 'Aircosum': list7, 'Zonne_energie': list9, 'Batstate': list10, 'Batcharge': list11, 'Batdischarge': list12})
     return df
 
-df2 = create_dataframe2(auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, batstate_final, batcharge_final, batdischarge_final)
+df2 = create_dataframe2(auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, zonne_energie, batstate_final, batcharge_final, batdischarge_final)
 import matplotlib.pyplot as plt
 df2.plot(kind='bar', subplots = True)
 plt.subplots_adjust(hspace=0.9, top=0.95,bottom=0.05)

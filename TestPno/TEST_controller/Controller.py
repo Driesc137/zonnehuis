@@ -191,6 +191,10 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     #bereken de kostrpijs_energie met de data opgeslagen in actions
     kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i]/1000 - (1/3)* actions['esell'][i] * netstroom[i]/1000 for i in range(0, total_time))
 
+    #bereid wp_actions en airco_actions voor op return
+    wp_actions = [(delta_t_simulatie*i)/1000 for i in wp_actions]
+    airco_actions = [(delta_t_simulatie*i)/1000 for i in airco_actions]
+
 
     return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]
 

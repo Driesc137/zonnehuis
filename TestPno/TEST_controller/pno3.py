@@ -79,3 +79,38 @@ for x in mycursor:
     resultaat2 = (list(x))
 resultaat2[1] = removeSpaces(resultaat2[1])
 print(removeSpaces(resultaat2[1]))
+
+sql = "INSERT INTO weer (naam, datum, temp, feelslike, dew, humidity, precip, precipprob, preciptype, snow, snowdepth, windgust, windspeed, winddir, sealevelpressure, cloudcover, visibility, solarradiation, solarenergy, uvindex, severerisk, conditions, icon, stations) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+# Vul de waarden in voor het nieuwe record
+values = (
+    'naam_value',
+    '2022-03-27T02:00:00',
+    '9.7',
+    '7.9',
+    '6.2',
+    '78.83',
+    '0',
+    '0',
+    '',
+    '0',
+    '0',
+    '28.4',
+    '12.7',
+    '50',
+    '1031.7',
+    '0',
+    '10',
+    '0',
+    '0',
+    '0',
+    '10',
+    'clear',
+    'clear-night',
+    ''
+)
+
+mycursor.execute(sql, values)
+
+# Commit de transactie
+db.commit()

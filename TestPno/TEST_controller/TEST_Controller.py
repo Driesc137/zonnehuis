@@ -7,14 +7,13 @@
 #constraint : temp max 1 graad veranderen per uur (enkel als thuis) maak vergelijking voor verslag: tijdens oz
 #niet thuis: toch constraints
 #simulatie laten beginnen om 6h
-#wm meerdere mogelijkheden
 #verkoopprijs energie 1/3? gemiddeldes nemen
 # batterij opzoeken
 #batterij aan en uit kunnen zetten, wp ook
-#wp verbruik per half uur? /door deltaT
 #vergelijkingen maken voor verslag
-#negatieve energieprijzen wegdoen: wp verbruikt dan zoveel mogelijk, want verdient geld, maar in realiteit niet zo gwn naar 0 zetten
 #integratie over wanneer temp niet tussen min en max zit: foutcontrole
+#ebuy optellen en meegeven, esell ook
+
 #imports
 import numpy as np
 from TEST_Simuleer_warmte_model import simuleer_warmte_model
@@ -239,18 +238,18 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
 
     return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
 
-testdag = '2022-01-05'
+testdag = '2022-03-27'
 dataset1 = getTempFromDB(testdag)                                       #haal temperatuur en irradiantie van dag 1 uit database
-#temp_out = dataset1[0]
+temp_out = dataset1[0]
 #temp_out = [30,25,28,29,30,26,25,29,29,30,30,30,30,30,30,30,30,30,31,31,31,31,28,29,31,31,31,31]#haal temperatuur uit dataset1 (°C)
 #temp_out = [30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30]
-temp_out = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-#irradiantie = dataset1[1]
-irradiantie = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]
+#temp_out = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+irradiantie = dataset1[1]
+#irradiantie = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]
 
-#netstroom = getFromDB(testdag)
+netstroom = getFromDB(testdag)
 #netstroom = [-0.5, 189.91, 210.98, 188.41, -2, -1, 294.68, 316.63, 376.31, 370.89, 275.13, 267.75, 237.66, 189.53, 213.51, 185.24, 225.1, 333.5, -2, 469.17, -5, -5, 318.42, 284.3]
-netstroom = [400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
+#netstroom = [400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
 #haal netstroom van dag 1 uit database
 booleanwm = True
 booleanauto = True

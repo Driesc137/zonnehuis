@@ -244,6 +244,9 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     irradiantie = []
     netstroom = []
     for i in testdagen:
+        print(f"dagen input: {i}")
+    print("-----------------------------------")
+    for i in testdagen:
         temp_out += getTempFromDB(i)[0]
         irradiantie += getTempFromDB(i)[1]
         netstroom += getFromDB(i)
@@ -260,9 +263,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     print(f"auto input: {booleanauto}")
     print(f"keuken input: {booleankeuken}")
     print(f"thuis input: {thuis}")
-    for i in testdagen:
-        print(f"dagen input: {i}")
-    print("-----------------------------------")
+
 
     [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis, uren_tot)
 
@@ -390,4 +391,4 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
     return auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final
 
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-01-01', 70, False, True, True, True)
+[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-10-30', 2, False, True, True, True)

@@ -1,23 +1,5 @@
-#file in progress voor controller demodag
-#to-do:
-#zonne installatie:
-    #zonne energie binnen = irradiatie * oppervlakte * efficientie * 75% door helling enzo
-    #dit kan max 4750 W zijn
-    #hier gaat nog es 10% af dus max 4750 W * 90% = 4275 W
-#constraint : temp max 1 graad veranderen per uur (enkel als thuis) maak vergelijking voor verslag: tijdens oz
-#simulatie laten beginnen om 6h
-#wm meerdere mogelijkheden
-#verkoopprijs energie 1/3?
-#batterij aan en uit kunnen zetten, wp ook
-#wp verbruik per half uur? /door deltaT
-#vergelijkingen maken voor verslag
-#negatieve energieprijzen wegdoen: wp verbruikt dan zoveel mogelijk, want verdient geld, maar in realiteit niet zo
-#imports
-import numpy as np
-from TEST_Simuleer_warmte_model import simuleer_warmte_model
-from GetfromDB import getFromDB
-from GetfromDB import getTempFromDB
-from TEST_Optimalisatie import optimaliseer
+from Simuleer_warmte_model import simuleer_warmte_model
+from Optimalisatie import optimaliseer
 
 def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
     #constanten
@@ -37,7 +19,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         vertrek = 0
     else:
         aankomst = 17-6                 # Aankomsttijd (uur van 6h => 17h)
-        vertrek = 24+6-6                    # Vertrektijd (uur van 12h => 6h)
+        vertrek = horizon                    # Vertrektijd (uur van 12h => 6h)
 
     keuken_begin = 17-6                    # beginttijd (uur van 6h => 17h)
     keuken_einde = 19-6                    # eindtijd (uur van 6h => 19h)
@@ -59,6 +41,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     T_in_max = 22                   # maximale binnentemperatuur (Celsius)
     T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
     T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
+    K = 273.15                      # constante om van Celsius naar Kelvin te gaan
 
     batmax = 10000                     #maximale batterijcapaciteit (kWh)
     batmin = 0                      #minimale batterijcapaciteit (kWh)
@@ -72,13 +55,13 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     netstroom = priceinput
 
     #Celsius naar Kelvin
-    temp_out = [i + 273.15 for i in temp_out]
-    T_in_0 = T_in_0 + 273.15
-    T_m_0 = T_m_0 + 273.15
-    T_in_min = T_in_min + 273.15
-    T_in_max = T_in_max + 273.15
-    T_m_min = T_m_min + 273.15
-    T_m_max = T_m_max + 273.15
+    temp_out = [i + K for i in temp_out]
+    T_in_0 = T_in_0 + K
+    T_m_0 = T_m_0 + K
+    T_in_min = T_in_min + K
+    T_in_max = T_in_max + K
+    T_m_min = T_m_min + K
+    T_m_max = T_m_max + K
 
     #netstroom naar €/kWh
     netstroom = [i/1000 for i in netstroom]
@@ -94,9 +77,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     #horizon implementatie
     current_time = start_time                                                       #houdt de huidige tijd bij
     opslag_resultaat = {}                                                           #maak een dictionary om de resultaten van de optimalisatie in op te slaan
-    opslag_simulatie = {}                                                          #maak een dictionary om de resultaten van de simulatie in op te slaan
     actions = {}                                                                    #maak een dictionary om de definitieve acties van de controller in op te slaan
-    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'wpsum', 'aircosum', 'batstate', 'batcharge', 'batdischarge']      #maak een lijst met de attributen van de dictionary
+    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'batstate', 'batcharge', 'batdischarge']      #maak een lijst met de attributen van de dictionary
     for i in attributes:
         actions[i] = []                                                             #initialiseer een lijst voor elk attribuut in de dictionary
     actions['Binnentemperatuur'] = []                                               #initialiseer een lijst voor de binnentemperatuur
@@ -168,20 +150,19 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             keuken_einde = 0
         else:
             keuken_einde -= 1                                                       #verschuif het einde van de keuken met 1 uur
-
         current_time += 1                                                           #verschuif de horizon met 1 uur
 
-    #update batterij en temp laatste keer
+    #update batterij en temp laatste keer bereid voor op return
     actions['batstate'].append(bat0)
+    actions['batstate'] = [(i/batmax)*100 for i in actions['batstate']]
 
-    #optimalisatie laatste keer
-    T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
-    T_m_simulatie = [i - 273.15 for i in T_m_simulatie]
+    #optimalisatie return voorbereiden
+    T_in_simulatie = [i - K for i in T_in_simulatie]
+    T_m_simulatie = [i - K for i in T_m_simulatie]
     T_time_simulatie = [i / (60 * 60) for i in T_time_simulatie]
 
-    #bereid return voor
-    print("----------------------------------")
 
+    #bereid return voor
     for key, value in actions.items():
         locals()[key] = value
         if key == 'auto':
@@ -194,10 +175,6 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             ebuy_final = value
         elif key == 'esell':
             esell_final = value
-        elif key == 'wpsum':
-            wpsum_final = value
-        elif key == 'aircosum':
-            aircosum_final = value
         elif key == 'Binnentemperatuur':
             T_in_final = value
         elif key == 'Bouwmassa':
@@ -208,174 +185,13 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             batcharge_final = value
         elif key == 'batdischarge':
             batdischarge_final = value
-        print(f"{key}: {value}")
 
-    print("----------------------------------")
-    print(f"zonne_energie: {zonne_energie}")
     zonne_energie_sum = sum(zonne_energie)
-    print(f"zonne_energie_sum: {zonne_energie_sum}")
-    print("----------------------------------")
 
     #bereken de kostrpijs_energie met de data opgeslagen in actions
     kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i]/1000 - (1/3)* actions['esell'][i] * netstroom[i]/1000 for i in range(0, total_time))
-    #print("De oplossing is €", kostprijs_energie)
-    print(f"kostprijs_energie: {kostprijs_energie}")
-    print("----------------------------------")
-    print(opslag_resultaat['Iteratie', 0]['result'])
-    print("----------------------------------")
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]
 
-testdag = '2022-11-09'
-dataset1 = getTempFromDB(testdag)                                       #haal temperatuur en irradiantie van dag 1 uit database
-temp_out = dataset1[0]
-#temp_out = [30,25,28,29,30,26,25,29,29,30,30,30,30,30,30,30,30,30,31,31,31,31,28,29,31,31,31,31]#haal temperatuur uit dataset1 (°C)
-#temp_out = [30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30,30, 30, 30,30,30]
-
-irradiantie = dataset1[1]
-#irradiantie = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]
-
-netstroom = getFromDB(testdag)
-#netstroom = [-0.5, 189.91, 210.98, 188.41, -2, -1, 294.68, 316.63, 376.31, 370.89, 275.13, 267.75, 237.66, 189.53, 213.51, 185.24, 225.1, 333.5, -2, 469.17, -5, -5, 318.42, 284.3]
-#netstroom = [400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400,400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
-#haal netstroom van dag 1 uit database
-booleanwm = True
-booleanauto = True
-booleankeuken = True
-thuis = False
-#print inputs
-print("-----------------------------------")
-print(f"wm input: {booleanwm}")
-print(f"auto input: {booleanauto}")
-print(f"keuken input: {booleankeuken}")
-print(f"thuis input: {thuis}")
-print(f"dag input: {testdag}")
-print("-----------------------------------")
-
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis)
-
-print(f"netstroom: {netstroom}")
-print(f"min netstroom: {min(netstroom)}")
-print(f"max netstroom: {max(netstroom)}")
-print(f"gem netstroom: {sum(netstroom)/len(netstroom)}")
-print("----------------------------------")
-#print de temp_out en irradiantie
-print(f"temp_out: {temp_out}")
-print(f"max temp_out: {max(temp_out)}")
-print(f"min temp_out: {min(temp_out)}")
-print(f"gem temp_out: {sum(temp_out)/len(temp_out)}")
-print(f"irradiantie: {irradiantie}")
-print("----------------------------------")
-
-#bereken min, max en gemiddelde binnentemperatuur van de dag
-min_T_in = min(T_in_final)
-max_T_in = max(T_in_final)
-gem_T_in = sum(T_in_final)/len(T_in_final)
-print(f"min_T_in: {min_T_in}")
-print(f"max_T_in: {max_T_in}")
-print(f"gem_T_in: {gem_T_in}")
-
-'''#print alle T_in uit opslag_simulatie
-print("----------------------------------")
-for i in range(0,24):
-    print(f"T_in_{i}: {opslag_resultaat['Iteratie', i]['T_in']}")
-for i in range(0,24):
-    print(f"vermogen_{i}: {opslag_resultaat['Iteratie', i]['wpsum']}")
-print("----------------------------------")
-#print alle wp en airco acties uit opslag_resultaat
-print("----------------------------------")
-for i in range(0,24):
-    print(f"wp_{i}: {opslag_resultaat['Iteratie', i]['wp']}")
-for i in range(0,24):
-    print(f"airco_{i}: {opslag_resultaat['Iteratie', i]['airco']}")
-print("----------------------------------")
-print(f"wp_actions: {wp_actions}")
-print(f"airco_actions: {airco_actions}")'''
-#print batterij
-print("----------------------------------")
-import pandas as pd
-
-def create_dataframe(list1, list2,list3):
-    # make all lists the same size
-    list1 = [round(i,4) for i in list1]
-    list2 = [round(i,4) for i in list2]
-    list3 = [round(i,4) for i in list3]
-    max_len = max(len(list1), len(list2), len(list3))
-    list1 += [None] * (max_len - len(list1))
-    list2 += [None] * (max_len - len(list2))
-    list3 += [None] * (max_len - len(list3))
-    df = pd.DataFrame({'Batstate': list1, 'Batcharge': list2, 'Batdischarge': list3})
-    return df
-
-df = create_dataframe(batstate_final, batcharge_final, batdischarge_final)
-print(df)
-df3 = create_dataframe(wp_actions, airco_actions, T_in_final)
-print(df3)
-def create_dataframe2(list1, list2,list3,list4,list5,list6,list7,list8,list9,list10,list11,list12):
-    # make all lists the same size
-    list1 = [round(i,4) for i in list1]
-    list2 = [round(i,4) for i in list2]
-    list3 = [round(i,4) for i in list3]
-    list4 = [round(i,4) for i in list4]
-    list5 = [round(i,4) for i in list5]
-    list6 = [round(i,4) for i in list6]
-    list7 = [round(i,4) for i in list7]
-    list8 = [round(i,4) for i in list8]
-    list9 = [round(i,4) for i in list9]
-    list10 = [round(i,4) for i in list10]
-    list11 = [round(i,4) for i in list11]
-    list12 = [round(i,4) for i in list12]
-    max_len = max(len(list1), len(list2), len(list3), len(list4), len(list5), len(list6), len(list7), len(list8), len(list9), len(list10), len(list11), len(list12))
-    list1 += [None] * (max_len - len(list1))
-    list2 += [None] * (max_len - len(list2))
-    list3 += [None] * (max_len - len(list3))
-    list4 += [None] * (max_len - len(list4))
-    list5 += [None] * (max_len - len(list5))
-    list6 += [None] * (max_len - len(list6))
-    list7 += [None] * (max_len - len(list7))
-    list8 += [None] * (max_len - len(list8))
-    list9 += [None] * (max_len - len(list9))
-    list10 += [None] * (max_len - len(list10))
-    list11 += [None] * (max_len - len(list11))
-    list12 += [None] * (max_len - len(list12))
-    df = pd.DataFrame({'Auto': list1, 'Wasmachine': list2, 'Keuken': list3, 'Ebuy': list4, 'Esell': list5, 'Wpsum': list6, 'Aircosum': list7, 'Zonne_energie': list9, 'Batstate': list10, 'Batcharge': list11, 'Batdischarge': list12})
-    return df
-
-df2 = create_dataframe2(auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, batstate_final, batcharge_final, batdischarge_final)
-import matplotlib.pyplot as plt
-df2.plot(kind='bar', subplots = True)
-plt.subplots_adjust(hspace=0.9, top=0.95,bottom=0.05)
-plt.show(block=False)
-
-#plot de binnentemperatuur en de temperatuur van de bouwmassa
-plt.figure()
-plt.plot(T_time_simulatie, T_in_simulatie, label='T_in')
-plt.plot(T_time_simulatie, T_m_simulatie, label='T_m')
-uren = np.linspace(0, 24, 24*60*60)
-mintemp = min(min(T_in_simulatie), min(T_m_simulatie))
-
-if thuis:
-    plt.fill_between(T_time_simulatie, mintemp, T_in_simulatie, where=(uren >= 0) & (uren <= 24), alpha=0.5, label='Thuis')
-if not thuis:
-    plt.fill_between(T_time_simulatie, mintemp, T_in_simulatie, where=(uren >= 11) & (uren <= 24), alpha=0.5, label='Thuis')
-plt.plot(T_time_simulatie, [20 for i in T_time_simulatie], label='T_min')
-plt.plot(T_time_simulatie, [22 for i in T_time_simulatie], label='T_max')
-plt.xlabel('Tijd (uur)')                                #label x-as
-plt.ylabel('Temperatuur (°C)')                          #label y-as
-plt.title('Binnen- en muurtemperatuur zonnehuis')     #titel van de grafiek
-plt.grid()                                              #raster op de grafiek
-plt.legend(loc='upper left')                           #legende linksboven
-plt.show(block=False)                                              #toon de grafiek
-plt.figure()
-plt.plot(range(len(temp_out)), temp_out, label='T_out')
-plt.xlabel('Tijd (uur)')                                #label x-as
-plt.ylabel('Temperatuur (°C)')                          #label y-as
-plt.title('Buitentemperatuur zonnehuis')     #titel van de grafiek
-plt.grid()                                              #raster op de grafiek
-plt.legend(loc='upper left')                           #legende linksboven
-plt.show()                                              #toon de grafieken
-
-
-#testdag negatieve prijzen: 29 december, 3 jan!
-#daarnet: 2022-06-03
+#test: [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller([14.2, 14.3, 13.7, 13.3, 12.9, 12.7, 12.2, 11.9, 11.5, 11.5, 12.7, 12.9, 13.0, 12.7, 11.4, 13.2, 11.8, 11.3, 11.1, 10.9, 11.1, 11.1, 10.8, 10.4], [92.2, 36.08, 19.63, 22.49, 44.88, 79.0, 117.91, 149.09, 161.51, 148.37, 130.41, 112.8, 107.2, 111.69, 134.67, 149.07, 145.74, 193.3, 200.91, 170.96, 145.54, 140.92, 128.25, 120.92],[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 34.0, 66.0, 167.0, 164.0, 148.0, 190.0, 271.0, 45.0, 31.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], True, True, True, False)

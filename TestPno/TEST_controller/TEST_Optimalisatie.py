@@ -244,29 +244,47 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_batcharge_grenzen.add(m.batdischarge[i] <= m.batdischarge_aan[i] * batmaxdischarge)
 
 
+
+    #module: warmtepomp en airco niet tegelijk aan in 1 uur
+    '''m.wpsum_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de warmtepomp aanstaat in tijdsinterval i
+    m.aircosum_aan = pe.Var(pe.RangeSet(1, horizon),domain=pe.Binary)  # binaire variabele die aangeeft of de airco aanstaat in tijdsinterval i
+    m.con_wp_sum_grenzen = pe.ConstraintList()  # lijst met constraints: warmtepomp tussen 0 en 4000 W
+    for i in range(1, horizon + 1):
+        m.con_wp_sum_grenzen.add(0 <= m.wpsum[i])
+        m.con_wp_sum_grenzen.add(m.wpsum[i] <= m.wpsum_aan * P_max)
+    m.con_airco_grenzen = pe.ConstraintList()  # lijst met constraints: airco tussen 0 en 4000 W
+    for i in range(1, horizon + 1):
+        m.con_airco_grenzen.add(0 <= m.aircosum[i])
+        m.con_airco_grenzen.add(m.aircosum[i] <= m.aircosum_aan * P_max_airco)'''
+
     # objectieffunctie
     kostprijs_energie = sum(netstroom[i - 1] * (m.ebuy[i] - 1 / 3 * m.esell[i]) for i in range(1,horizon + 1))  # hoe weten we dat verkoopprijs altijd exact 1/3 is van aankoopprijs?
     m.obj = pe.Objective(expr=kostprijs_energie, sense=pe.minimize)
 
     #los het probleem op
+    '''solver = po.SolverFactory('glpk')
+    result = solver.solve(m)'''
+
     solver = po.SolverFactory('gurobi_direct')
     result = solver.solve(m)
 
     #haal data uit resultaat en stuur terug
     resultaat = {}
-    resultaat['wp'] = [pe.value(m.wp[i]) for i in range(1, 3)] #lijst met vermogen van de warmtepomp (W) per half uur
-    resultaat['wpsum'] = [pe.value(m.wpsum[i]) for i in range(1, 2)] #lijst met vermogen van de warmtepomp (W) per uur
-    resultaat['T_in'] = [round(pe.value(m.T_in[i])-273.15,2) for i in range(1, 3)] #lijst met binnentemperaturen (Celsius) per half uur
-    resultaat['T_m'] = [round(pe.value(m.T_m[i])-273.15) for i in range(1, 3)] #lijst met temperaturen van de bouwmassa (Celsius) per half uur
-    resultaat['auto'] = [pe.value(m.auto[i]) for i in range(1, 2)] #lijst met auto aan/uit (0/1) per uur
-    resultaat['wm'] = [pe.value(m.wm[i]) for i in range(1, 2)] #lijst met wasmachine aan/uit (0/1) per uur
-    resultaat['ebuy'] = [pe.value(m.ebuy[i]) for i in range(1, 2)] #lijst met energie die we kopen (kWh) per uur
-    resultaat['esell'] = [pe.value(m.esell[i]) for i in range(1, 2)] #lijst met energie die we verkopen (kWh) per uur
-    resultaat['airco'] = [pe.value(m.airco[i]) for i in range(1, 3)]
-    resultaat['aircosum'] = [pe.value(m.aircosum[i]) for i in range(1, 2)]
-    resultaat['keuken'] = [pe.value(m.keuken[i]) for i in range(1, 2)]
-    resultaat['batcharge'] = [pe.value(m.batcharge[i]) for i in range(1, 2)]
-    resultaat['batdischarge'] = [pe.value(m.batdischarge[i]) for i in range(1, 2)]
-    resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, 2)]
+    resultaat['result'] = result
+    resultaat['wp'] = [pe.value(m.wp[i]) for i in range(1, N*horizon + 1)] #lijst met vermogen van de warmtepomp (W) per half uur
+    resultaat['wpsum'] = [pe.value(m.wpsum[i]) for i in range(1, horizon + 1)] #lijst met vermogen van de warmtepomp (W) per uur
+    resultaat['T_in'] = [round(pe.value(m.T_in[i])-273.15,2) for i in range(1, N*horizon + 1)] #lijst met binnentemperaturen (Celsius) per half uur
+    resultaat['T_m'] = [round(pe.value(m.T_m[i])-273.15,2) for i in range(1, N*horizon + 1)] #lijst met temperaturen van de bouwmassa (Celsius) per half uur
+    resultaat['auto'] = [pe.value(m.auto[i]) for i in range(1, horizon + 1)] #lijst met auto aan/uit (0/1) per uur
+    resultaat['wm'] = [pe.value(m.wm[i]) for i in range(1, horizon + 1)] #lijst met wasmachine aan/uit (0/1) per uur
+    resultaat['ebuy'] = [pe.value(m.ebuy[i]) for i in range(1, horizon + 1)] #lijst met energie die we kopen (kWh) per uur
+    resultaat['esell'] = [pe.value(m.esell[i]) for i in range(1, horizon + 1)] #lijst met energie die we verkopen (kWh) per uur
+    resultaat['kostprijs_energie'] = pe.value(kostprijs_energie) #kostprijs van de energie (euro)
+    resultaat['airco'] = [pe.value(m.airco[i]) for i in range(1, N*horizon + 1)]
+    resultaat['aircosum'] = [pe.value(m.aircosum[i]) for i in range(1, horizon + 1)]
+    resultaat['keuken'] = [pe.value(m.keuken[i]) for i in range(1, horizon + 1)]
+    resultaat['batcharge'] = [pe.value(m.batcharge[i]) for i in range(1, horizon + 1)]
+    resultaat['batdischarge'] = [pe.value(m.batdischarge[i]) for i in range(1, horizon + 1)]
+    resultaat['batstate'] = [pe.value(m.batstate[i]) for i in range(1, horizon + 2)]
 
     return resultaat

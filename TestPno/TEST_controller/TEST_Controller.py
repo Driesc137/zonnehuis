@@ -340,6 +340,18 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
         print(opslag_resultaat['Iteratie', 0]['result'])
         print("----------------------------------")
 
+        #bereken totaal verbruikte energie van alle apparaten
+        wm_verbruik = sum(wm_final)*ewm
+        auto_verbruik = sum(auto_final)*eau
+        keuken_verbruik = sum(keuken_final)*ekeuken
+        '''wp_verbruik = sum(wpsum_final)/1000
+        airco_verbruik = sum(aircosum_final)/1000'''
+        wp_verbruik = sum(wp_actions)/2000
+        airco_verbruik = sum(airco_actions)/2000
+        print(f"wp_verbruik: {wp_verbruik}")
+        print(f"airco_verbruik: {airco_verbruik}")
+        tot_verbruik = wm_verbruik + auto_verbruik + keuken_verbruik + wp_verbruik + airco_verbruik
+        print(f"tot_verbruik: {tot_verbruik}")
 
         return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
 
@@ -525,7 +537,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
     plt.legend(loc='upper left')                           #legende linksboven
     plt.show()           '''                                   #toon de grafieken
 
-execute("2022-04-05", False, True, True, True, True, True)
+execute("2022-07-06", True, True, True, True, True, True)
 
 #testdag negatieve prijzen: 29 december, 3 jan!
 #daarnet: 2022-06-03

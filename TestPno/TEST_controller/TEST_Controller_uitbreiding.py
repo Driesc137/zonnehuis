@@ -8,7 +8,7 @@ import datetime
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 
-def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, keuken_boolean):
+def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, keuken_boolean, wp_boolean, bat_boolean):
 
     #functies
     def get_n_days(n, first_day):
@@ -138,7 +138,6 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         T_in_simulatie = []  # maak een lijst voor de binnentemperatuur van de simulatie
         T_m_simulatie = []  # maak een lijst voor de temperatuur van de bouwmassa van de simulatie
         T_time_simulatie = []  # maak een lijst voor de tijd van de simulatie
-        number_dag = 0  # houdt het aantal dagen bij
         while current_time < total_time:  # zolang de huidige tijd kleiner is dan de totale tijd is de optimalisatie niet voltooid
             # bepaal de horizon lengte, optimaliseer en sla de resultaten op
             if current_time + horizon <= total_time:
@@ -319,7 +318,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         print("----------------------------------")
         print(f"netstroom: {netstroom}")
         # bereken de kostrpijs_energie met de data opgeslagen in actions
-        kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1 / 3) * actions['esell'][i] * netstroom[i] for i inrange(0, total_time))
+        kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1 / 3) * actions['esell'][i] * netstroom[i] for i in range(0, total_time))
         # print("De oplossing is €", kostprijs_energie)
         print(f"kostprijs_energie: {kostprijs_energie}")
         print("----------------------------------")
@@ -345,6 +344,8 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     booleanwm = wm_boolean
     booleanauto = auto_boolean
     booleankeuken = keuken_boolean
+    booleanwp = wp_boolean
+    booleanbat = bat_boolean
     thuis = thuis
     #print inputs
     print("-----------------------------------")
@@ -354,7 +355,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     print(f"thuis input: {thuis}")
 
 
-    [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, thuis, uren_tot)
+    [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, booleanwp, booleanbat, thuis, uren_tot)
 
     print(f"netstroom: {netstroom}")
     print(f"min netstroom: {min(netstroom)}")
@@ -480,4 +481,4 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
     return auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final
 
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-10-30', 2, False, True, True, True)
+[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-03-01', 50, False, True, True, True, True, True)

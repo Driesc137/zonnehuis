@@ -1,7 +1,12 @@
-from Simuleer_warmte_model import simuleer_warmte_model
-from Optimalisatie import optimaliseer
+#imports
+import numpy as np
+from TEST_Simuleer_warmte_model import simuleer_warmte_model
+from TEST_Optimalisatie import optimaliseer
+import scipy.integrate as integrate
 
-def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
+
+def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, wp_boolean, bat_boolean, thuis):
+
     #constanten
     delta_t = 1                     # tijdsinterval (h)
     delta_t_simulatie = 0.5         # tijdsinterval (h) voor simulatie
@@ -19,7 +24,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         vertrek = 0
     else:
         aankomst = 17-6                 # Aankomsttijd (uur van 6h => 17h)
-        vertrek = horizon                    # Vertrektijd (uur van 12h => 6h)
+        vertrek = 24+6-6                    # Vertrektijd (uur van 12h => 6h)
 
     keuken_begin = 17-6                    # beginttijd (uur van 6h => 17h)
     keuken_einde = 19-6                    # eindtijd (uur van 6h => 19h)
@@ -33,41 +38,66 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     if keuken_boolean:
         keuken_aan = 2                  # Aantal uren dat de keuken nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
 
-    T_in_0 = 20                     # begintemperatuur van de binnenlucht (Celsius) voor benadering en simulatie (arbitrair)
-    T_m_0 = 20                      # begintemperatuur van de bouwmassa (Celsius) voor benadering en simulatie (arbitrair)
-    P_max = 4000                    # maximaal vermogen van de warmtepomp (W)
-    P_max_airco = 4000              # maximaal vermogen van de airco (W)
-    T_in_min = 20                   # minimale binnentemperatuur (Celsius)
-    T_in_max = 22                   # maximale binnentemperatuur (Celsius)
-    T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
-    T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
-    K = 273.15                      # constante om van Celsius naar Kelvin te gaan
+    T_in_0 = 20  # begintemperatuur van de binnenlucht (Celsius) voor benadering en simulatie (arbitrair)
+    T_m_0 = 20  # begintemperatuur van de bouwmassa (Celsius) voor benadering en simulatie (arbitrair)
+    if wp_boolean:
+        P_max = 4000                    # maximaal vermogen van de warmtepomp (W)
+        P_max_airco = 4000              # maximaal vermogen van de airco (W)
+        T_in_min = 20                   # minimale binnentemperatuur (Celsius)
+        T_in_max = 22                   # maximale binnentemperatuur (Celsius)
+        T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
+        T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
+        T_nothome_min = 16              # minimale binnentemperatuur als er niemand thuis is (Celsius)
+        if max(tempinput) > 25:
+            T_nothome_max = max(tempinput)              # maximale binnentemperatuur als er niemand thuis is (Celsius)
+        else:
+            T_nothome_max = 25              # maximale binnentemperatuur als er niemand thuis is (Celsius)
+    else:
+        P_max = 0                    # maximaal vermogen van de warmtepomp (W)
+        P_max_airco = 0              # maximaal vermogen van de airco (W)
+        T_in_min = -10                   # minimale binnentemperatuur (Celsius)
+        T_in_max = 50                   # maximale binnentemperatuur (Celsius)
+        T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
+        T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
+        T_nothome_min = -10              # minimale binnentemperatuur als er niemand thuis is (Celsius)
+        T_nothome_max = 50              # maximale binnentemperatuur als er niemand thuis is (Celsius)
 
-    batmax = 10000                     #maximale batterijcapaciteit (kWh)
-    batmin = 0                      #minimale batterijcapaciteit (kWh)
-    bat0 = 0                        #begintoestand batterij (kWh)
-    batmaxcharge = batmax                #maximale laadsnelheid batterij (kW)
-    batmaxdischarge = batmax             #maximale ontlaadsnelheid batterij (kW)
+    if bat_boolean:
+        batmax = 10000                     #maximale batterijcapaciteit (kWh)
+        batmin = 0                      #minimale batterijcapaciteit (kWh)
+        bat0 = 0                        #begintoestand batterij (kWh)
+        batmaxcharge = batmax                #maximale laadsnelheid batterij (kW)
+        batmaxdischarge = batmax             #maximale ontlaadsnelheid batterij (kW)
+    else:
+        batmax = 0                     #maximale batterijcapaciteit (kWh)
+        batmin = 0                      #minimale batterijcapaciteit (kWh)
+        bat0 = 0                        #begintoestand batterij (kWh)
+        batmaxcharge = 0                #maximale laadsnelheid batterij (kW)
+        batmaxdischarge = 0             #maximale ontlaadsnelheid batterij (kW)
 
     #haal data uit database
     temp_out = tempinput
     irradiantie = radiationinput
     netstroom = priceinput
+    for i in netstroom:
+        if i < 0:
+            netstroom[netstroom.index(i)] = 0
 
     #Celsius naar Kelvin
-    temp_out = [i + K for i in temp_out]
-    T_in_0 = T_in_0 + K
-    T_m_0 = T_m_0 + K
-    T_in_min = T_in_min + K
-    T_in_max = T_in_max + K
-    T_m_min = T_m_min + K
-    T_m_max = T_m_max + K
+    temp_out = [i + 273.15 for i in temp_out]
+    T_in_0 = T_in_0 + 273.15
+    T_m_0 = T_m_0 + 273.15
+    T_in_min = T_in_min + 273.15
+    T_in_max = T_in_max + 273.15
+    T_m_min = T_m_min + 273.15
+    T_m_max = T_m_max + 273.15
+    T_nothome_min = T_nothome_min + 273.15
+    T_nothome_max = T_nothome_max + 273.15
 
     #netstroom naar €/kWh
     netstroom = [i/1000 for i in netstroom]
 
     #bereken zonne energie
-
     zonne_energie = [i * zp_opp * eff * 0.75 for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
     for i in zonne_energie:
         if i > 7000:
@@ -78,7 +108,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     current_time = start_time                                                       #houdt de huidige tijd bij
     opslag_resultaat = {}                                                           #maak een dictionary om de resultaten van de optimalisatie in op te slaan
     actions = {}                                                                    #maak een dictionary om de definitieve acties van de controller in op te slaan
-    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'batstate', 'batcharge', 'batdischarge']      #maak een lijst met de attributen van de dictionary
+    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'wpsum', 'aircosum', 'batstate', 'batcharge', 'batdischarge']      #maak een lijst met de attributen van de dictionary
     for i in attributes:
         actions[i] = []                                                             #initialiseer een lijst voor elk attribuut in de dictionary
     actions['Binnentemperatuur'] = []                                               #initialiseer een lijst voor de binnentemperatuur
@@ -92,12 +122,12 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         # bepaal de horizon lengte, optimaliseer en sla de resultaten op
         if current_time + horizon <= total_time:
             horizon_end = current_time + horizon                                    #einde van de huidige horizon
-            opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end],ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
+            opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end],ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
         else:
             horizon_end = total_time                                                #einde van de huidige horizon, zorgt ervoor dat de controller niet verder dan de totale tijd optimaliseert
             new_horizon = horizon -((current_time + horizon) - total_time)          #nieuwe horizon die niet over totale tijd optimaliseert
-            opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end], ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
+            opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end], ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
         #controleer de acties die de controller heeft gekozen voor dit interval, deze worden de beginvoorwaarden voor het volgende interval
         wm_aan = wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0] #aantal uren dat de wasmachine nog aan moet staan
@@ -150,17 +180,69 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             keuken_einde = 0
         else:
             keuken_einde -= 1                                                       #verschuif het einde van de keuken met 1 uur
+
         current_time += 1                                                           #verschuif de horizon met 1 uur
 
-    #update batterij en temp laatste keer bereid voor op return
+        # reset de acties voor de volgende dag
+        if (current_time % 24 == 0) and current_time != 0:
+            [aankomst, vertrek, keuken_begin, keuken_einde, wm_aan, auto_aan, keuken_aan] = reset(thuis, wm_boolean,auto_boolean,keuken_boolean)
+
+    #update batterij en temp laatste keer
     actions['batstate'].append(bat0)
-    actions['batstate'] = [(i/batmax)*100 for i in actions['batstate']]
 
-    #optimalisatie return voorbereiden
-    T_in_simulatie = [i - K for i in T_in_simulatie]
-    T_m_simulatie = [i - K for i in T_m_simulatie]
+    # foutcontrole
+    T_in_np = np.array(T_in_simulatie)
+    T_time_np = np.array(T_time_simulatie)
+    if thuis:
+        int_arr_down = np.array([])
+        int_arr_up = np.array([])
+        mask = T_in_np < T_in_min
+        int_arr_down = T_in_np[mask]
+        if len(int_arr_down) == 0:
+            err_down = 0
+        else:
+            err_down = integrate.simpson(np.full(len(int_arr_down),T_in_min)) - integrate.simpson(int_arr_down)
+        mask = T_in_np > T_in_max
+        int_arr_up = T_in_np[mask]
+        if len(int_arr_up) == 0:
+            err_up = 0
+        else:
+            err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
+    else:
+        int_arr_down_home = np.array([])
+        int_arr_up_home = np.array([])
+        int_arr_down_nothome = np.array([])
+        int_arr_up_nothome = np.array([])
+
+        mask = T_in_np[aankomst*3600:vertrek*3600] < T_in_min
+        int_arr_down_home = T_in_np[aankomst*3600:vertrek*3600][mask]
+        if len(int_arr_down_home) == 0:
+            err_down_home = 0
+        else:
+            err_down_home = integrate.simpson(np.full(len(int_arr_down_home),T_in_min)) - integrate.simpson(int_arr_down_home)
+        mask = T_in_np[aankomst*3600:vertrek*3600] > T_in_max
+        int_arr_up_home = T_in_np[aankomst*3600:vertrek*3600][mask]
+        if len(int_arr_up_home) == 0:
+            err_up_home = 0
+        else:
+            err_up_home = integrate.simpson(int_arr_up_home) - integrate.simpson(np.full(len(int_arr_up_home),T_in_max))
+        mask = T_in_np[:aankomst*3600] < T_nothome_min
+        int_arr_down_nothome = T_in_np[:aankomst*3600][mask]
+        if len(int_arr_down_nothome) == 0:
+            err_down_nothome = 0
+        else:
+            err_down_nothome = integrate.simpson(np.full(len(int_arr_down_nothome),T_nothome_min)) - integrate.simpson(int_arr_down_nothome)
+        mask = T_in_np[:aankomst*3600] > T_nothome_max
+        int_arr_up_nothome = T_in_np[:aankomst*3600][mask]
+        if len(int_arr_up_nothome) == 0:
+            err_up_nothome = 0
+        else:
+            err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome),T_nothome_max))
+
+    #optimalisatie laatste keer
+    T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
+    T_m_simulatie = [i - 273.15 for i in T_m_simulatie]
     T_time_simulatie = [i / (60 * 60) for i in T_time_simulatie]
-
 
     #bereid return voor
     for key, value in actions.items():
@@ -175,6 +257,10 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             ebuy_final = value
         elif key == 'esell':
             esell_final = value
+        elif key == 'wpsum':
+            wpsum_final = value
+        elif key == 'aircosum':
+            aircosum_final = value
         elif key == 'Binnentemperatuur':
             T_in_final = value
         elif key == 'Bouwmassa':
@@ -186,16 +272,15 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         elif key == 'batdischarge':
             batdischarge_final = value
 
+    #som ebuy en esell in kWh
+    ebuy_final_sum = sum(ebuy_final)
+    esell_final_sum = sum(esell_final)
+
+
+
     zonne_energie_sum = sum(zonne_energie)
-
     #bereken de kostrpijs_energie met de data opgeslagen in actions
-    kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i]/1000 - (1/3)* actions['esell'][i] * netstroom[i]/1000 for i in range(0, total_time))
-
-    #bereid wp_actions en airco_actions voor op return
-    wp_actions = [(delta_t_simulatie*i)/1000 for i in wp_actions]
-    airco_actions = [(delta_t_simulatie*i)/1000 for i in airco_actions]
+    kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1/3)* actions['esell'][i] * netstroom[i] for i in range(0, total_time))
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]
-
-#test: [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller([14.2, 14.3, 13.7, 13.3, 12.9, 12.7, 12.2, 11.9, 11.5, 11.5, 12.7, 12.9, 13.0, 12.7, 11.4, 13.2, 11.8, 11.3, 11.1, 10.9, 11.1, 11.1, 10.8, 10.4], [92.2, 36.08, 19.63, 22.49, 44.88, 79.0, 117.91, 149.09, 161.51, 148.37, 130.41, 112.8, 107.2, 111.69, 134.67, 149.07, 145.74, 193.3, 200.91, 170.96, 145.54, 140.92, 128.25, 120.92],[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 34.0, 66.0, 167.0, 164.0, 148.0, 190.0, 271.0, 45.0, 31.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], True, True, True, False)
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]

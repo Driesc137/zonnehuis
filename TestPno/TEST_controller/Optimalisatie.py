@@ -174,28 +174,28 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
             m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
     if not thuis:
         if aankomst > 0:
-            '''for i in range(2, aankomst * N):
+            for i in range(2, aankomst*N):
                 m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
-            for i in range(aankomst * N, N * (vertrek + 1)):
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
+            for i in range(aankomst*N, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
-            '''for i in range(N * (vertrek + 1), N * (horizon + 1)):
+            for i in range(N*(vertrek + 1), N*(horizon) + 1):
                 m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
         elif vertrek > 0:
-            for i in range(2, N * (vertrek + 1)):
+            for i in range(2, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
-            for i in range(N * (vertrek + 1), N * (horizon + 1)):
+            for i in range(N*(vertrek + 1), N*(horizon) + 1):
                 m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
@@ -221,7 +221,7 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
 
     '''wp en airco niet tegelijk aan in half uur'''
     m.con_wp_airco = pe.ConstraintList()
-    for i in range(1, horizon + 1):
+    for i in range(1, N*horizon + 1):
         m.con_wp_airco.add(m.wp_aan[i] + m.airco_aan[i] <= 1)
 
     '''maximum ebuy + relatie ebuy met bkoop'''
@@ -257,7 +257,6 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_batcharge_grenzen.add(m.batcharge[i] <= m.batcharge_aan[i] * batmaxcharge)
         m.con_batcharge_grenzen.add(0 <= m.batdischarge[i])
         m.con_batcharge_grenzen.add(m.batdischarge[i] <= m.batdischarge_aan[i] * batmaxdischarge)
-
 
     # objectieffunctie
     kostprijs_energie = sum(netstroom[i - 1] * (m.ebuy[i] - 1 / 3 * m.esell[i]) for i in range(1,horizon + 1))  # hoe weten we dat verkoopprijs altijd exact 1/3 is van aankoopprijs?

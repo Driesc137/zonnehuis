@@ -238,32 +238,52 @@ def run_python_code():
             rad = [float(customrad12), float(customrad13), float(customrad14), float(customrad15), float(customrad16), float(customrad17), float(customrad18), float(customrad19), float(customrad20), float(customrad21), float(customrad22), float(customrad23), float(customrad0), float(customrad1), float(customrad2), float(customrad3), float(customrad4), float(customrad5), float(customrad6), float(customrad7), float(customrad8), float(customrad9), float(customrad10), float(customrad11)]
         if template == 'true':
             if lage_elec == True:
-                dataprijs = [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]    
+                data0 = getFromDB('2022-05-26')
+                next_day = get_next_day('2022-05-26')
+                data2 = getFromDB(next_day)
+                dataprijs = data0[-18:] + data2[:6]   
             if fluc_elec == True:
-                dataprijs = [150,450,-20,35,0,500,-10,70,9,12,-1,110,12,44,-14,150,155,-35,18,190,2,210,-22,23]
+                data0 = getFromDB('2022-04-22')
+                next_day = get_next_day('2022-04-22')
+                data2 = getFromDB(next_day)
+                dataprijs = data0[-18:] + data2[:6]
             if hoge_elec == True:
-                dataprijs = [400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400,400]
+                data0 = getFromDB('2022-08-29')
+                next_day = get_next_day('2022-08-29')
+                data2 = getFromDB(next_day)
+                dataprijs = data0[-18:] + data2[:6]
             if koud == True:
-                temp= [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                [temp0,rad0] = getTempFromDB('2022-01-05')
+                next_day = get_next_day('2022-01-05')
+                [temp2,radM] = getTempFromDB(next_day)
+                temp = temp0[-18:] + temp2[:6]
+
             if gematigd == True:
-                temp = [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+                [temp0,rad0] = getTempFromDB('2022-05-12')
+                next_day = get_next_day('2022-05-12')
+                [temp2,radM] = getTempFromDB(next_day)
+                temp = temp0[-18:] + temp2[:6]
             if warm == True:
-                temp = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+                [temp0,rad0] = getTempFromDB('2022-06-18')
+                next_day = get_next_day('2022-06-18')
+                [temp2,radM] = getTempFromDB(next_day)
+                temp = temp0[-18:] + temp2[:6]
+                for i in range(len(temp)):
+                    temp[i] = temp[i] +10
             if button5 == True:
-                rad1 = [random.choice([0, 0.1, 0.2,0.3,0.4,0.5]) for _ in range(9)]
-                rad2 = [0,0,0,0,0,0,0,0,0,0]
-                rad3 = [random.choice([0, 0.1, 0.2,0.3,0.4,0.5]) for _ in range(5)]
-                rad = rad1 + rad2 + rad3
+                rad1 = [random.choice([0, 0.1, 0.2,0.3,0.4,0.5]) for _ in range(17)]
+                rad2 = [0,0,0,0,0,0,0]
+                rad = rad1 + rad2 
             if button4 == True:
-                rad1 = [random.choice([1.5, 1, 1.1,1.4]) for _ in range(9)]
-                rad2 = [0,0,0,0,0,0,0,0,0,0]
+                rad1 = [random.choice([1.5, 1, 1.1,1.4]) for _ in range(17)]
+                rad2 = [0,0,0,0,0,0,0]
                 rad3 = [random.choice([1.5, 1, 1.1,1.4]) for _ in range(5)]
-                rad = rad1 + rad2 + rad3
+                rad = rad1 + rad2 
             if button3 == True:
-                rad1 = [random.choice([3.5, 4, 3.7,3.2,4.1]) for _ in range(9)]
-                rad2 = [0,0,0,0,0,0,0,0,0,0]
+                rad1 = [random.choice([3.5, 4, 3.7,3.2,4.1]) for _ in range(17)]
+                rad2 = [0,0,0,0,0,0,0]
                 rad3 = [random.choice([3.5, 4, 3.7,3.2,4.1]) for _ in range(5)]
-                rad = rad1 + rad2 + rad3
+                rad = rad1 + rad2 
         if button1 == True:
             data0 = getFromDB(selected_date)
             [temp0,rad0] = getTempFromDB(selected_date)
@@ -281,7 +301,7 @@ def run_python_code():
         global total_verbruikeAirco
         batpercentage = bat1
         batpercentage = batpercentage[0:24]
-        total_verbruikeAirco = sum(verbruikeAirco)
+        total_verbruikeAirco = sum(verbruikeAirco)/1000
         for i in range(0,len(rad)):
             a = rad[i]*0.2*22.4 #opgewekte energie
             totaal_opgewekte_energie = totaal_opgewekte_energie + a
@@ -300,8 +320,8 @@ def run_python_code():
         totaal_verbruikte_energie_airco = sum(verbruikeAirco)/1000
         totaal_verbruikte_energie_warmtepomp = round(totaal_verbruikte_energie_warmtepomp,2)
         totaal_verbruikte_energie_airco = round(totaal_verbruikte_energie_airco,2)
-        verbruikeAirco = [verbruikeAirco[i] * 1000 for i in range(48)]
-        verbruikwarmtepomp = [verbruikwarmtepomp[i] * 1000 for i in range(48)]
+        #verbruikeAirco = [verbruikeAirco[i] * 1000 for i in range(48)]
+        #verbruikwarmtepomp = [verbruikwarmtepomp[i] * 1000 for i in range(48)]
         for i in auto:
             if i == 1.0:
                 verbruikte_energie_auto.append(7400)
@@ -345,7 +365,8 @@ def run_python_code():
             verbruikte_energie[i] = verbruikte_energie[i] / 1000
         for i in range(len(opgewekte_energie)):
             opgewekte_energie[i] = opgewekte_energie[i] / 1000
-        
+        for i in range(len(verbruikeAirco)):
+            verbruikeAirco[i] = verbruikeAirco[i] / 1000
         
         return render_template('index.html', selectedDate=selected_date, result=result,keuken=keuken,totaal_opgewekte_energie=totaal_opgewekte_energie, totaal_verbruikte_energie = totaal_verbruikte_energie,totale_prijs_energie=totale_prijs_energie,gemiddeldeElektriciteitsprijs=gemiddeldeElektriciteitsprijs,kost_zonderOP=kost_zonderOP,kostverschil=kostverschil)
     return render_template('indextest.html')

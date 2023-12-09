@@ -151,7 +151,7 @@ mycursor.execute(sql, values)
 db.commit()
 
 #mycursor.execute("SELECT * FROM weer")
-mycursor.execute("SELECT datum, temp FROM weer WHERE datum = '2022-03-27T02:00:00'")
+mycursor.execute("SELECT datum, solarradiation FROM weer WHERE datum = '2022-03-27T02:00:00'")
 for x in mycursor:
     resultaat2 = (list(x))
 resultaat2[1] = removeSpaces(resultaat2[1])

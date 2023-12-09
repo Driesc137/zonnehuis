@@ -1,96 +1,92 @@
 #file in progress voor controller demodag
-#notes:
-#constraint auto aanpassen: contraint niet per inteval maar voor 50-80%, bovendien eventueel input van gebruiker via database
-#optimalisatie per kwartier ipv per uur --> nauwkeuriger
-#airco
 #to-do:
-#auto niet per tijdslot maar per percentage
+#verliezen zonne energie nog 0,75% verlies op tot zonne energie binnen
+#zonne installatie:
+    #zonne energie binnen = irradiatie * oppervlakte * efficientie * 75% door helling enzo
+    #dit kan max 4750 W zijn
+    #hier gaat nog es 10% af dus max 4750 W * 90% = 4275 W
 #batterij erin gooien
-#uitzoeken hoe controller data opslaat in database, krijgt van interface en welke, en hoe terug naar interface sturen
-
-'''overzicht:
-- imports
-- constanten
-- haal data uit database
-- pyomo model
-- contraints
-- objective
-- horizon (loop)
-    - benadering horizon
-    - optimalisatie
-    - simulatie 1 uur (of 1 kwartier)
-- resultaten
-- naar database'''
-
+#constraint : temp max 1 graad veranderen per uur (enkel als thuis) maak vergelijking voor verslag: tijdens oz
+#simulatie laten beginnen om 6h
 #imports
 
 from TEST_controller.Simuleer_warmte_model import simuleer_warmte_model
-from TEST_controller.Benader_warmte_model import benader_warmte_model
-from TEST_controller.Benader_warmte_model_start import benader_warmte_model_start
 from TEST_controller.GetfromDB import getFromDB
 from TEST_controller.GetfromDB import getTempFromDB
 from TEST_controller.Optimalisatie import optimaliseer
-import numpy as np 
-'''
-from Simuleer_warmte_model import simuleer_warmte_model
-from Benader_warmte_model import benader_warmte_model
-from Benader_warmte_model_start import benader_warmte_model_start
-from GetfromDB import getFromDB
-from GetfromDB import getTempFromDB
-from Optimalisatie import optimaliseer
-import numpy as np '''
+import numpy as np
 
-def controller(templist1,pricelist1,radiationlist1,wm_boolean,auto_boolean):
+def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, thuis):
     #constanten
     delta_t = 1                     # tijdsinterval (h)
     horizon = 24                    # lengte van de horizon (h)
-    zp_opp = 22.4                   # oppervlakte zonnepaneel (m^2)
+    zp_opp = 46.2                   # oppervlakte zonnepaneel (m^2)
     eff = 0.2                       # efficientie zonnepaneel
     M = 1000                        # grote M. Wat is dit?
     ewm = 2.5                       # verbruik wasmachine (kW = kWh/h)
     eau = 7.4                       # vermogen laadpaal (kW)
+    ekeuken = 2.5                   # vermogen keuken (kW)
     start_time = 0                  # Begin met tijd = 0
     total_time = 24                 # Totaal aantal uren die geoptimaliseerd moeten worden
-    dag_simulatie_1 = '2022-06-01'  # Dag 1 waarop de simulatie plaatsvindt
-    dag_simulatie_2 = '2022-06-02'  # Dag 2 waarop de simulatie plaatsvindt
+    if thuis:
+        aankomst = 0
+        vertrek = 0
+    else:
+        aankomst = 17-6                 # Aankomsttijd (uur van 6h => 17h)
+        vertrek = horizon                    # Vertrektijd (uur van 12h => 6h)
+    if thuis:
+        keuken_begin = 0
+        keuken_einde = 0
+    else:
+        keuken_begin = 17-6                    # beginttijd (uur van 6h => 17h)
+        keuken_einde = 19-6                    # eindtijd (uur van 6h => 19h)
     wm_aan = 0                     # Aantal uren dat de wasmachine nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
     auto_aan = 0                    # Aantal uren dat de auto nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+    keuken_aan = 0                  # Aantal uren dat de keuken nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
     if wm_boolean:
         wm_aan = 2                      # Aantal uren dat de wasmachine nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
     if auto_boolean:
         auto_aan = 3                    # Aantal uren dat de auto nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+    if keuken_boolean:
+        keuken_aan = 2                  # Aantal uren dat de keuken nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+
     T_in_0 = 20                     # begintemperatuur van de binnenlucht (Celsius) voor benadering en simulatie (arbitrair)
-    T_m_0 = 18                      # begintemperatuur van de bouwmassa (Celsius) voor benadering en simulatie (arbitrair)
+    T_m_0 = 20                      # begintemperatuur van de bouwmassa (Celsius) voor benadering en simulatie (arbitrair)
     P_max = 4000                    # maximaal vermogen van de warmtepomp (W)
-    T_in_min = 19                   # minimale binnentemperatuur (Celsius)
-    T_in_max = 30000                   # maximale binnentemperatuur (Celsius)
-    T_m_min = 0                    # minimale temperatuur van de bouwmassa (Celsius)
-    T_m_max = 30000                   # maximale temperatuur van de bouwmassa (Celsius)
+    P_max_airco = 4000              # maximaal vermogen van de airco (W)
+    T_in_min = 20                   # minimale binnentemperatuur (Celsius)
+    T_in_max = 22                   # maximale binnentemperatuur (Celsius)
+    T_m_min = -10                    # minimale temperatuur van de bouwmassa (Celsius)
+    T_m_max = 50                   # maximale temperatuur van de bouwmassa (Celsius)
+
+    batmax = 10000                     #maximale batterijcapaciteit (kWh)
+    batmin = 0                      #minimale batterijcapaciteit (kWh)
+    bat0 = 0                        #begintoestand batterij (kWh)
+    batmaxcharge = batmax                #maximale laadsnelheid batterij (kW)
+    batmaxdischarge = batmax             #maximale ontlaadsnelheid batterij (kW)
+
 
     #haal data uit database
-    dataset1 = getTempFromDB(dag_simulatie_1)                                       #haal temperatuur en irradiantie van dag 1 uit database
-    temp_out = dataset1[0]                                                          #haal temperatuur uit dataset1 (°C)
-    irradiantie = dataset1[1]                                                       #haal irradiantie uit dataset1 (kWh/m^2)
-    dataset2 = getTempFromDB(dag_simulatie_2)                                       #haal temperatuur en irradiantie van dag 2 uit database
-    temp_out.extend(dataset2[0])                                                    #voeg temperatuur van dag 2 toe aan temperatuur van dag 1
-    irradiantie.extend(dataset2[1])                                                 #voeg irradiantie van dag 2 toe aan irradiantie van dag 1
-    netstroom = getFromDB(dag_simulatie_1)                                          #haal netstroom van dag 1 uit database
-    netstroom.extend(getFromDB(dag_simulatie_2))                                    #voeg netstroom van dag 2 toe aan netstroom van dag 1
-    temp_out = templist1
-    irradiantie = radiationlist1
-    netstroom = pricelist1
+    temp_out = tempinput
+    irradiantie = radiationinput
+    netstroom = priceinput
+
+    #bereken zonne energie
+
+    zonne_energie = [i * zp_opp * eff * 0.75 for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
+    for i in zonne_energie:
+        if i > 7000:
+            zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
+    zonne_energie = [i *0.9 for i in zonne_energie]
+
     #horizon implementatie
     current_time = start_time                                                       #houdt de huidige tijd bij
-    wp = np.zeros(total_time)                                                       #initialiseer een lijst voor de warmtepomp
-    wp = list(wp)                                                                   #zet de lijst om naar een lijst met floats
     opslag_resultaat = {}                                                           #maak een dictionary om de resultaten van de optimalisatie in op te slaan
-    opslag_benadering = {}                                                          #maak een dictionary om de resultaten van de benadering in op te slaan
     opslag_simulatie = {}                                                          #maak een dictionary om de resultaten van de simulatie in op te slaan
     actions = {}                                                                    #maak een dictionary om de definitieve acties van de controller in op te slaan
-    attributes = ['auto', 'wm', 'ebuy', 'esell', 'wpsum']                               #maak een lijst met de attributen van de dictionary
+    attributes = ['auto', 'wm','keuken', 'ebuy', 'esell', 'wpsum', 'aircosum', 'batstate', 'batcharge', 'batdischarge']      #maak een lijst met de attributen van de dictionary
     for i in attributes:
         actions[i] = []                                                             #initialiseer een lijst voor elk attribuut in de dictionary
-    actions['kostprijs_energie'] = []                                               #initialiseer een lijst voor de kostprijs van de energie
     actions['Binnentemperatuur'] = []                                               #initialiseer een lijst voor de binnentemperatuur
 
     while current_time < total_time:                                                #zolang de huidige tijd kleiner is dan de totale tijd is de optimalisatie niet voltooid
@@ -98,88 +94,118 @@ def controller(templist1,pricelist1,radiationlist1,wm_boolean,auto_boolean):
         # bepaal de horizon lengte, optimaliseer en sla de resultaten op
         if current_time + horizon <= total_time:
             horizon_end = current_time + horizon                                    #einde van de huidige horizon
-            opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zp_opp, eff, ewm, eau, delta_t, M, wm_aan, auto_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, T_in_min, T_in_max, T_m_min, T_m_max)     #optimalisatie a.d.h.v. benadering
-            for i in range(0,horizon):
-                wp[current_time+i] = opslag_resultaat['Iteratie', current_time]['wpsum'][i]      #de volgende benadering/voorspelling gebeurt a.d.h.v. deze resultaten
-            #[T_in, T_m] = benader_warmte_model(horizon, opslag_resultaat['Iteratie', current_time]['wp'], temp_out[current_time:horizon_end],irradiantie[current_time:horizon_end], T_in_0,T_m_0)  # benadering/voorspelling van het warmtemodel
-            #opslag_benadering['Iteratie', current_time] = [T_in, T_m]  # sla de resultaten van de benadering op
+            opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
         else:
             horizon_end = total_time                                                #einde van de huidige horizon, zorgt ervoor dat de controller niet verder dan de totale tijd optimaliseert
             new_horizon = horizon -((current_time + horizon) - total_time)          #nieuwe horizon die niet over totale tijd optimaliseert
-            opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end],  zp_opp, eff, ewm, eau, delta_t, M, wm_aan, auto_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, T_in_min, T_in_max, T_m_min, T_m_max)     #optimalisatie a.d.h.v. benadering
-            for i in range(0,new_horizon):
-                wp[current_time+i] = opslag_resultaat['Iteratie', current_time]['wpsum'][i]     #de volgende benadering/voorspelling gebeurt a.d.h.v. deze resultaten
-            #[T_in, T_m] = benader_warmte_model(new_horizon, wp[current_time:horizon_end],temp_out[current_time:horizon_end], irradiantie[current_time:horizon_end] * 1000,T_in_0, T_m_0)  # benadering/voorspelling van het warmtemodel
-            #opslag_benadering['Iteratie', current_time] = [T_in, T_m]  # sla de resultaten van de benadering op
+            opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end],  zp_opp, eff, ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
         #controleer de acties die de controller heeft gekozen voor dit interval, deze worden de beginvoorwaarden voor het volgende interval
         wm_aan = wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0] #aantal uren dat de wasmachine nog aan moet staan
         auto_aan = auto_aan - opslag_resultaat['Iteratie', current_time]['auto'][0] #aantal uren dat de auto nog aan moet staan
+        keuken_aan = keuken_aan - opslag_resultaat['Iteratie', current_time]['keuken'][0] #aantal uren dat de keuken nog aan moet staan
 
         # sla de resultaten van de optimalisatie voor de current time op. Deze worden de definitieve acties
         for i in attributes:
             actions[i].append(opslag_resultaat['Iteratie', current_time][i][0])
-        actions['kostprijs_energie'].append(opslag_resultaat['Iteratie', current_time]['kostprijs_energie'])
+
+        #batterij update
+        bat0 = actions['batstate'][current_time] + actions['batcharge'][current_time] - actions['batdischarge'][current_time] #update de batterijtoestand voor de volgende iteratie
+
 
         #simuleer het warmte model van de huidige iteratie naar de volgende iteratie (tijdsvenster schuift op)
-        [T_in, T_m, T_in_time, T_m_time] = simuleer_warmte_model(delta_t, actions['wpsum'][current_time],temp_out[current_time], irradiantie[current_time],T_in_0,T_m_0) #simulatie van het warmtemodel
+        [T_in, T_m, T_in_time, T_m_time, oplossing] = simuleer_warmte_model(delta_t, actions['wpsum'][current_time],actions['aircosum'][current_time],temp_out[current_time], irradiantie[current_time],T_in_0,T_m_0) #simulatie van het warmtemodel
         T_in_0 = T_in[-1]                                                      #begintemperatuur van de binnentemperatuur voor volgende iteratie
         T_m_0 = T_m[-1]                                                        #begintemperatuur van de bouwmassa voor volgende iteratie
-        opslag_simulatie['Iteratie', current_time] = [T_in, T_m, T_in_time, T_m_time]               #sla de resultaten van de simulatie op
+        opslag_simulatie['Iteratie', current_time] = [T_in, T_m, T_in_time, T_m_time, oplossing]               #sla de resultaten van de simulatie op
 
-
+        #verschuif horizon
+        if aankomst == 0:
+            aankomst = 0
+        else:
+            aankomst -= 1                                                           #verschuif de aankomst met 1 uur
+        if vertrek == 0:
+            vertrek = 0
+        else:
+            vertrek -= 1                                                            #verschuif het vertrek met 1 uur
+        if keuken_begin == 0:
+            keuken_begin = 0
+        else:
+            keuken_begin -= 1                                                       #verschuif het begin van de keuken met 1 uur
+        if keuken_einde == 0:
+            keuken_einde = 0
+        else:
+            keuken_einde -= 1                                                       #verschuif het einde van de keuken met 1 uur
+        print(current_time)
         current_time += 1                                                           #verschuif de horizon met 1 uur
 
-    '''  for i in range(0,total_time):
-        print(opslag_resultaat['Iteratie', i]['auto'])
-    for i in range(0,total_time):
-        print(opslag_resultaat['Iteratie', i]['wm'])
-    for i in range(0,total_time):
-        print(opslag_resultaat['Iteratie', i]['ebuy'])
-    for i in range(0,total_time):
-        print(opslag_resultaat['Iteratie', i]['esell'])
-    for i in range(0,total_time):
-        print(opslag_resultaat['Iteratie', i]['wp'])'''
+    #update batterij en temp laatste keer
+    actions['batstate'].append(bat0)
+
     #print(opslag_resultaat)
+    print("----------------------------------")
+
     for key, value in actions.items():
         locals()[key] = value
         if key == 'auto':
             auto_final = value
         elif key == 'wm':
             wm_final = value
+        elif key == 'keuken':
+            keuken_final = value
         elif key == 'ebuy':
             ebuy_final = value
         elif key == 'esell':
             esell_final = value
         elif key == 'wpsum':
             wpsum_final = value
-        elif key == 'kostprijs_energie':
-            kostprijs_energie_final = value
+        elif key == 'aircosum':
+            aircosum_final = value
         elif key == 'Binnentemperatuur':
             T_in_final = value
-        #print(f"{key}: {value}")
+        elif key == 'batstate':
+            batstate_final = value
+        elif key == 'batcharge':
+            batcharge_final = value
+        elif key == 'batdischarge':
+            batdischarge_final = value
+        print(f"{key}: {value}")
+
+    print("----------------------------------")
+    #haal van (bkoop, bverkoop) de eerste waarde uit de opslag_resultaat dictionary voor elke iteratie
+    bkoop = [opslag_resultaat['Iteratie', i]['bkoop'][0] for i in range(0, total_time)]
+    bverkoop = [opslag_resultaat['Iteratie', i]['bverkoop'][0] for i in range(0, total_time)]
+    #haal van (wp_aan, airco_aan) de eerste twee waarden uit de opslag_resultaat dictionary voor elke iteratie
+    wp_aan = [opslag_resultaat['Iteratie', i]['wp_aan'][0] for i in range(0, total_time)]
+    airco_aan = [opslag_resultaat['Iteratie', i]['airco_aan'][0] for i in range(0, total_time)]
+    #plak hier de tweede waarde van elke iteratie achteraan (voor wp_aan en airco_aan)
+    wp_aan = wp_aan + [opslag_resultaat['Iteratie', i]['wp_aan'][1] for i in range(0, total_time)]
+    airco_aan = airco_aan + [opslag_resultaat['Iteratie', i]['airco_aan'][1] for i in range(0, total_time)]
+
+    print(f"bkoop123: {bkoop}")
+    print(f"bverkoop: {bverkoop}")
+    print(f"wp_aan123: {wp_aan}")
+    print(f"airco_aan: {airco_aan}")
+    print("----------------------------------")
+    print(f"zonne_energie: {zonne_energie}")
+    zonne_energie_sum = sum(zonne_energie)
+    print(f"zonne_energie_sum: {zonne_energie_sum}")
+    print("----------------------------------")
 
     #bereken de kostrpijs_energie met de data opgeslagen in actions
     kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i]/1000 - (1/3)* actions['esell'][i] * netstroom[i]/1000 for i in range(0, total_time))
     #print("De oplossing is €", kostprijs_energie)
-    print(kostprijs_energie)
+    print(f"kostprijs_energie: {kostprijs_energie}")
+    print("----------------------------------")
+    print(opslag_resultaat['Iteratie', 0]['result'])
+    print("----------------------------------")
 
-    import sys
-
-    geheugengrootte_dict = sys.getsizeof(opslag_resultaat)
-    geheugengrootte_dict += sys.getsizeof(opslag_benadering)
-    geheugengrootte_dict += sys.getsizeof(opslag_simulatie)
-    return [auto_final,wm_final,ebuy_final,esell_final,wpsum_final,T_in_final]
+    T_in = []
+    
+    for i in range(0,24):
+        T_in = T_in + opslag_simulatie['Iteratie', i][4].y[0, :].tolist()
+       
+    T_in = [i-273.15 for i in T_in]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final, zonne_energie, zonne_energie_sum, opslag_simulatie, opslag_resultaat, kostprijs_energie,T_in, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
     #print(f"Geheugengrootte van de dictionary: {geheugengrootte_dict} bytes")
-
-dataset1 = getTempFromDB('2022-01-01')                                       #haal temperatuur en irradiantie van dag 1 uit database
-temp_out = dataset1[0]                                                          #haal temperatuur uit dataset1 (°C)
-irradiantie = dataset1[1] 
-netstroom = getFromDB('2022-01-01')                                          #haal netstroom van dag 1 uit database
-boolean1 = True
-boolean2 = True
-[A,B,C,D,E,F] = controller(temp_out,netstroom,irradiantie,boolean1,boolean2)
-print(E)
-print(len(E))
-print(len((F)))

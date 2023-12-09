@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Python Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='knop.css') }}">
     <style>
         body {
@@ -80,16 +81,36 @@
         .column button {
             margin: 5px;
         }
+
+        .slider-container {
+            width: 50%;
+            margin: auto;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>Kies Apparaten</h1>
     <form action="/run-python" method="POST">
             <button type="button" name="wasmachine" class="custom-button" onclick="toggleButton('wasmachine')">Wasmachine</button>
+            <!---<div class="slider-container"> 
+            <label for="slider">Selecteer een waarde van 0 tot 4:</label>
+            <input type="range" id="slider" name="sliderWas" min="0" max="4" step="1" value="0" oninput="updateValue(this.value)">
+            <p>Geselecteerde waarde: <span id="selectedValueWas">0</span></p>
+            </div>---->
+
             <button type="button" name="auto" class="custom-button" onclick="toggleButton('auto')">Auto</button>
             <button type="button" name="keuken" class="custom-button" onclick="toggleButton('keuken')">Keuken</button>
-            <button type="button" name="verwarming" class="custom-button" onclick="toggleButton('verwarming')">Verwarming</button>
+            <button type="button" name="airco" class="custom-button" onclick="toggleButton('airco')">Verwarming en Airco</button>
+            <button type="button" name="verwarming" class="custom-button" onclick="toggleButton('verwarming')">Heel De Dag Thuis</button>
+            <button type="button" name="batterij" class="custom-button" onclick="toggleButton('batterij')">Batterij</button>
             <input type="hidden" id="wasmachine" name="wasmachine" value="false">
+            <input type="hidden" id="airco" name="airco" value="false">
+            <input type="hidden" id="batterij" name="batterij" value="false">
             <input type="hidden" id="auto" name="auto" value="false">
             <input type="hidden" id="keuken" name="keuken" value="false">
             <input type="hidden" id="verwarming" name="verwarming" value="false">
@@ -138,37 +159,6 @@
         <!-- Voeg invoervelden toe voor elk uur -->
         <div class="hour-section">
             <!-- Herhaal dit blok voor elk uur (t/m hour23) -->
-            <label for="hour0">Uur 0:</label>
-            <input type="number" id="hour0" name="hour0" class="hour-input" placeholder="Temp">
-            <input type="number" name="price0" placeholder="Prijs">
-            <input type="number" name="solar0" placeholder="Zonnestraling">
-
-            <label for="hour1">Uur 1:</label>
-            <input type="number" id="hour1" name="hour1" class="hour-input" placeholder="Temp">
-            <input type="number" name="price1" placeholder="Prijs">
-            <input type="number" name="solar1" placeholder="Zonnestraling">
-
-            <!-- Herhaal dit blok voor elk uur (t/m hour23) -->
-            <label for="hour2">Uur 2:</label>
-            <input type="number" id="hour2" name="hour2" class="hour-input" placeholder="Temp">
-            <input type="number" name="price2" placeholder="Prijs">
-            <input type="number" name="solar2" placeholder="Zonnestraling">
-            
-            <label for="hour3">Uur 3:</label>
-            <input type="number" id="hour3" name="hour3" class="hour-input" placeholder="Temp">
-            <input type="number" name="price3" placeholder="Prijs">
-            <input type="number" name="solar3" placeholder="Zonnestraling">
-
-            <label for="hour4">Uur 4:</label>
-            <input type="number" id="hour4" name="hour4" class="hour-input" placeholder="Temp">
-            <input type="number" name="price4" placeholder="Prijs">
-            <input type="number" name="solar4" placeholder="Zonnestraling">
-
-            <label for="hour5">Uur 5:</label>
-            <input type="number" id="hour5" name="hour5" class="hour-input" placeholder="Temp">
-            <input type="number" name="price5" placeholder="Prijs">
-            <input type="number" name="solar5" placeholder="Zonnestraling">
-
             <label for="hour6">Uur 6:</label>
             <input type="number" id="hour6" name="hour6" class="hour-input" placeholder="Temp">
             <input type="number" name="price6" placeholder="Prijs">
@@ -217,7 +207,7 @@
             <label for="hour15">Uur 15:</label>
             <input type="number" id="hour15" name="hour15" class="hour-input" placeholder="Temp">
             <input type="number" name="price15" placeholder="Prijs">
-            <input type="number" name="solar" placeholder="Zonnestraling">
+            <input type="number" name="solar15" placeholder="Zonnestraling">
 
             <label for="hour16">Uur 16:</label>
             <input type="number" id="hour16" name="hour16" class="hour-input" placeholder="Temp">
@@ -259,6 +249,41 @@
             <input type="number" id="hour23" name="hour23" class="hour-input" placeholder="Temp">
             <input type="number" name="price23" placeholder="Prijs">
             <input type="number" name="solar23" placeholder="Zonnestraling">
+            
+            
+            <label for="hour0">Uur 0:</label>
+            <input type="number" id="hour0" name="hour0" class="hour-input" placeholder="Temp">
+            <input type="number" name="price0" placeholder="Prijs">
+            <input type="number" name="solar0" placeholder="Zonnestraling">
+
+            <label for="hour1">Uur 1:</label>
+            <input type="number" id="hour1" name="hour1" class="hour-input" placeholder="Temp">
+            <input type="number" name="price1" placeholder="Prijs">
+            <input type="number" name="solar1" placeholder="Zonnestraling">
+
+            <!-- Herhaal dit blok voor elk uur (t/m hour23) -->
+            <label for="hour2">Uur 2:</label>
+            <input type="number" id="hour2" name="hour2" class="hour-input" placeholder="Temp">
+            <input type="number" name="price2" placeholder="Prijs">
+            <input type="number" name="solar2" placeholder="Zonnestraling">
+            
+            <label for="hour3">Uur 3:</label>
+            <input type="number" id="hour3" name="hour3" class="hour-input" placeholder="Temp">
+            <input type="number" name="price3" placeholder="Prijs">
+            <input type="number" name="solar3" placeholder="Zonnestraling">
+
+            <label for="hour4">Uur 4:</label>
+            <input type="number" id="hour4" name="hour4" class="hour-input" placeholder="Temp">
+            <input type="number" name="price4" placeholder="Prijs">
+            <input type="number" name="solar4" placeholder="Zonnestraling">
+
+            <label for="hour5">Uur 5:</label>
+            <input type="number" id="hour5" name="hour5" class="hour-input" placeholder="Temp">
+            <input type="number" name="price5" placeholder="Prijs">
+            <input type="number" name="solar5" placeholder="Zonnestraling">
+
+            
+            
         </div>
 
         <br>
@@ -290,6 +315,9 @@
             const templates = document.querySelector('.templates');
             templates.style.display = (document.getElementById('template').value === "true") ? "flex" : "none";
             templates.classList.toggle('template-on', document.getElementById('template').value === "true");
+        }
+        function updateValue(value) {
+            document.getElementById("selectedValueWas").innerText = value;
         }
     </script>
 </body>

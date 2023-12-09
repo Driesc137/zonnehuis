@@ -1,37 +1,39 @@
 // SIDEBAR TOGGLE
-
-let sidebarOpen = false;
-const sidebar = document.getElementById('sidebar');
-
-function openSidebar() {
-  if (!sidebarOpen) {
-    sidebar.classList.add('sidebar-responsive');
-    sidebarOpen = true;
-  }
+/* Set the width of the sidebar to 250px and the left margin of the page content to 250px */
+function openNav() {
+  document.getElementById("mySidebar").style.width = "250px";
+  document.getElementById("main").style.marginLeft = "250px";
 }
 
-function closeSidebar() {
-  if (sidebarOpen) {
-    sidebar.classList.remove('sidebar-responsive');
-    sidebarOpen = false;
-  }
-}
+/* Set the width of the sidebar to 0 and the left margin of the page content to 0 */
+function closeNav() {
+  document.getElementById("mySidebar").style.width = "0";
+  document.getElementById("main").style.marginLeft = "0";
+} 
+
+
+$(document).ready(function () {
+  $("#sidebarCollapse").on("click", function () {
+    $("#sidebar").toggleClass("active");
+  });
+});
 
 // ---------- CHARTS ----------
 fetch('/get-data') // Maak een nieuwe route in je Flask-applicatie om de gegevens op te halen
     .then(response => response.json())
     .then(data => {
         createCharts(data);
+        total = data[2] + data[3] + data[4] + 0;
     })
     .catch(error => {
         console.error('Fout bij het ophalen van gegevens:', error);
     });
 // BAR CHART
-function createCharts(data) {
+function createCharts(data, total) {
 const barChartOptions = {
   series: [
     {
-      data: [10, 8, 6, 4],
+      data: [data[2], data[4],data[13], data[3], data[10]],
     },
   ],
   chart: {
@@ -41,7 +43,7 @@ const barChartOptions = {
       show: false,
     },
   },
-  colors: ['#246dec', '#cc3c43', '#367952', '#f5b74f'],
+  colors: ['#246dec', '#cc3c43', '#367952', '#f5b74f','#7e4e9e'],
   plotOptions: {
     bar: {
       distributed: true,
@@ -57,11 +59,16 @@ const barChartOptions = {
     show: false,
   },
   xaxis: {
-    categories: ['Wasmachine', 'Verwarming', 'Auto', 'Keuken'],
+    categories: ['Wasmachine', 'Verwarming','Airco', 'Auto', 'Keuken'],
   },
   yaxis: {
     title: {
-      text: 'Verbruik',
+      text: 'Verbruik (kWh)',
+    },
+    labels: {
+      formatter: function (val) {
+        return val.toFixed(0); // Dit zorgt ervoor dat er geen decimalen worden weergegeven
+      },
     },
   },
 };
@@ -77,11 +84,11 @@ const areaChartOptions = {
   series: [
     {
       name: 'Opgewekte energie',
-      data: data,
+      data: data[0],
     },
     {
       name: 'Verbruikte energie',
-      data: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
+      data: data[1],
     },
   ],
   chart: {
@@ -98,14 +105,14 @@ const areaChartOptions = {
   stroke: {
     curve: 'smooth',
   },
-  labels: ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16', '17', '18', '19', '20', '21', '22', '23'],
+  labels: ['06','07','08','09','10','11','12','13','14','15','16', '17', '18', '19', '20', '21', '22', '23', '00','01','02','03','04','05'],
   markers: {
     size: 0,
   },
   yaxis: [
     {
       title: {
-        text: 'Energie',
+        text: 'Energie (kWh)',
       },
       labels: {
         formatter: function (val) {
@@ -117,6 +124,11 @@ const areaChartOptions = {
   tooltip: {
     shared: true,
     intersect: false,
+    y: {
+      formatter: function (val) {
+        return val; // Gebruik de werkelijke waarde zonder afronding voor de tooltip
+      },
+    },
   },
 };
 
@@ -127,13 +139,14 @@ const areaChart = new ApexCharts(
 areaChart.render();
 // pie chart
 const options = {
-  series: [44, 55, 13, 43],
+  
+  series: [data[2], data[4],data[13], data[3], data[10]],
   chart: {
   width: 380,
   type: 'pie',
 },
-colors: ['#246dec', '#cc3c43', '#367952', '#f5b74f'],
-labels: ['Wasmachine', 'Verwarming', 'Auto', 'Keuken'],
+colors: ['#246dec', '#cc3c43', '#367952', '#f5b74f','#7e4e9e'],
+labels: ['Wasmachine', 'Verwarming','Airco', 'Auto', 'Keuken'],
 responsive: [{
   breakpoint: 480,
   options: {

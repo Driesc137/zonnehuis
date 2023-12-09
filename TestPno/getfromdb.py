@@ -281,7 +281,7 @@ def getTempFromDB(date):
     datum23 = datum[0] + datum[1] + datum[2] + datum[3] + "-" + datum[5] + datum[6] + "-" + datum[8] + datum[9]+ "T23:00:00"
     print(datum0)
     mycursor = db.cursor()
-    query = "SELECT datum, temp, solarenergy FROM weer WHERE datum = %s"
+    query = "SELECT datum, temp, solarradiation FROM weer WHERE datum = %s"
     
     mycursor.execute(query, (datum0,))
     resultaat = mycursor.fetchone()
@@ -411,4 +411,5 @@ def getTempFromDB(date):
    #print('test')
 #else:
     #print("Geen resultaat gevonden.")
-reult = getTempFromDB("2022-01-01")
+reult = getTempFromDB("2022-03-27")
+print(reult)

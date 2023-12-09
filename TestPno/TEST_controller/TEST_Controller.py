@@ -537,7 +537,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
     plt.legend(loc='upper left')                           #legende linksboven
     plt.show()           '''                                   #toon de grafieken
 
-execute("2022-07-06", True, True, True, True, True, True)
+execute("2022-08-04", False, True, True, True, True, True)
 
 #testdag negatieve prijzen: 29 december, 3 jan!
 #daarnet: 2022-06-03

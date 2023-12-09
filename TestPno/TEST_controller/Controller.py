@@ -298,6 +298,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     ebuy_final_sum = sum(ebuy_final)
     esell_final_sum = sum(esell_final)
 
+    #batstate in %
+    batstate_final = [(i/batmax)*100 for i in batstate_final]
 
 
     zonne_energie_sum = sum(zonne_energie)

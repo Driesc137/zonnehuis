@@ -7,6 +7,28 @@ import scipy.integrate as integrate
 
 def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuken_boolean, wp_boolean, bat_boolean, thuis):
 
+    #functies
+    def reset(thuis, wm_boolean, auto_boolean, keuken_boolean):
+        if thuis:
+            aankomst = 0
+            vertrek = 0
+        else:
+            aankomst = 17 - 6  # Aankomsttijd (uur van 6h => 17h)
+            vertrek = 24 + 6 - 6  # Vertrektijd (uur van 12h => 6h)
+
+        keuken_begin = 17 - 6  # beginttijd (uur van 6h => 17h)
+        keuken_einde = 19 - 6  # eindtijd (uur van 6h => 19h)
+        wm_aan = 0  # Aantal uren dat de wasmachine nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+        auto_aan = 0  # Aantal uren dat de auto nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+        keuken_aan = 0  # Aantal uren dat de keuken nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+        if wm_boolean:
+            wm_aan = 2  # Aantal uren dat de wasmachine nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+        if auto_boolean:
+            auto_aan = 3  # Aantal uren dat de auto nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+        if keuken_boolean:
+            keuken_aan = 2  # Aantal uren dat de keuken nog aan moet staan (wordt door optimalisatiefunctie eventueel geüpdatet)
+        return aankomst, vertrek, keuken_begin, keuken_einde, wm_aan, auto_aan, keuken_aan
+
     #constanten
     delta_t = 1                     # tijdsinterval (h)
     delta_t_simulatie = 0.5         # tijdsinterval (h) voor simulatie

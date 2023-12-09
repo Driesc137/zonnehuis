@@ -114,3 +114,48 @@ mycursor.execute(sql, values)
 
 # Commit de transactie
 db.commit()
+teVerwijderenDatum = '2022-10-30T02:00:00'
+
+# Voer de DELETE-query uit om het record met de opgegeven datum te verwijderen
+sql = "DELETE FROM weer WHERE datum = %s"
+mycursor.execute(sql, (teVerwijderenDatum,))
+
+# Commit de transactie
+db.commit()
+
+
+
+sql = "INSERT INTO weer (naam, datum, temp, feelslike, dew, humidity, precip, precipprob, preciptype, snow, snowdepth, windgust, windspeed, winddir, sealevelpressure, cloudcover, visibility, solarradiation, solarenergy, uvindex, severerisk, conditions, icon, stations) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+# Vul de waarden in voor het nieuwe record
+values = (
+    'naam_value',
+    '2022-10-30T02:00:00',
+    '16.4',
+    '7.9',
+    '6.2',
+    '78.83',
+    '0',
+    '0',
+    '',
+    '0',
+    '0',
+    '28.4',
+    '12.7',
+    '50',
+    '1031.7',
+    '0',
+    '10',
+    '0',
+    '0',
+    '0',
+    '10',
+    'clear',
+    'clear-night',
+    ''
+)
+
+mycursor.execute(sql, values)
+
+# Commit de transactie
+db.commit()

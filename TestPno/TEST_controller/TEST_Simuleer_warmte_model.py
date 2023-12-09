@@ -47,4 +47,4 @@ def simuleer_warmte_model(delta_T, P_in,P_airco, T_out, S_rad, T_in_0, T_m_0):  
     T_m = oplossing.y[1, :].tolist()
     T_time = oplossing.t.tolist()
 
-    return T_in, T_m, T_time                                  #terugsturen van de lijsten met binnentemperatuur en temperatuur van de bouwmassa
+    return T_in, T_m, T_time                                 #terugsturen van de lijsten met binnentemperatuur en temperatuur van de bouwmassa

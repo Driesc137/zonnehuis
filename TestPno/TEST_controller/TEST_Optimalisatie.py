@@ -165,10 +165,6 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
         m.con_wp.add(m.T_m[i] == m.T_m[i - 1] + h * (1 / C_m) * (frad * (CoP * m.wp[i-1] - EER * m.airco[i-1])+ gA * S_rad[i - 2] - (m.T_m[i - 1] - T_out[i - 2]) / R_e - (m.T_m[i - 1] - m.T_in[i - 1]) / R_i))
 
     '''temperatuur grenzen'''
-    print(T_nothome_max, 'max')
-    print(T_nothome_min, 'min')
-    print(T_in_0)
-    print(T_out)
     m.con_temp_grenzen = pe.ConstraintList()  # lijst met constraints: T_in en T_m tussen 18 en 22 graden
     if thuis:
         for i in range(2, N*(horizon + 1)):
@@ -178,32 +174,32 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
             m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
     if not thuis:
         if aankomst > 0:
-            '''for i in range(2, aankomst*N):
+            for i in range(2, aankomst*N):
                 m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
             for i in range(aankomst*N, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
-            '''for i in range(N*(vertrek + 1), N*(horizon) + 1):
+            for i in range(N*(vertrek + 1), N*(horizon) + 1):
                 m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
         elif vertrek > 0:
             for i in range(2, N*(vertrek + 1)):
                 m.con_temp_grenzen.add(T_in_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_in_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
                 m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
-            '''for i in range(N*(vertrek + 1), N*(horizon) + 1):
+            for i in range(N*(vertrek + 1), N*(horizon) + 1):
                 m.con_temp_grenzen.add(T_nothome_min <= m.T_in[i])
                 m.con_temp_grenzen.add(m.T_in[i] <= T_nothome_max)
                 m.con_temp_grenzen.add(T_m_min <= m.T_m[i])
-                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)'''
+                m.con_temp_grenzen.add(m.T_m[i] <= T_m_max)
 
     '''wpsum en aircosum'''
     m.con_wpsum = pe.ConstraintList()  # lijst met constraints: wpsum is de som van wp over N tijdsintervallen --> len(wpsum) = horizon ipv N*horizon
@@ -225,7 +221,7 @@ def optimaliseer(horizon, irradiantie, netstroom, zonne_energie, ewm, eau, ekeuk
 
     '''wp en airco niet tegelijk aan in half uur'''
     m.con_wp_airco = pe.ConstraintList()
-    for i in range(1, horizon + 1):
+    for i in range(1, N*horizon + 1):
         m.con_wp_airco.add(m.wp_aan[i] + m.airco_aan[i] <= 1)
 
     '''maximum ebuy + relatie ebuy met bkoop'''

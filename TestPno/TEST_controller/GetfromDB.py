@@ -482,7 +482,7 @@ def getFullTempAndIr():
         database="pno3"
     )
     mycursor = db.cursor()
-    query = "SELECT datum, temp, solarenergy FROM weer"
+    query = "SELECT datum, temp, solarradiation FROM weer"
     mycursor.execute(query)
     resultaten = mycursor.fetchall()
     return resultaten

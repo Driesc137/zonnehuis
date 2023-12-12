@@ -138,6 +138,12 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         T_in_simulatie = []  # maak een lijst voor de binnentemperatuur van de simulatie
         T_m_simulatie = []  # maak een lijst voor de temperatuur van de bouwmassa van de simulatie
         T_time_simulatie = []  # maak een lijst voor de tijd van de simulatie
+        err_down_opslag = []  # maak een lijst voor de integratie van de binnentemperatuur onder de ondergrens
+        err_up_opslag = []  # maak een lijst voor de integratie van de binnentemperatuur boven de bovengrens
+        err_down_home_opslag = []  # maak een lijst voor de integratie van de binnentemperatuur onder de ondergrens als er iemand thuis is
+        err_up_home_opslag = []  # maak een lijst voor de integratie van de binnentemperatuur boven de bovengrens als er iemand thuis is
+        err_down_nothome_opslag = []  # maak een lijst voor de integratie van de binnentemperatuur onder de ondergrens als er niemand thuis is
+        err_up_nothome_opslag = []  # maak een lijst voor de integratie van de binnentemperatuur boven de bovengrens als er niemand thuis is
         while current_time < total_time:  # zolang de huidige tijd kleiner is dan de totale tijd is de optimalisatie niet voltooid
             # bepaal de horizon lengte, optimaliseer en sla de resultaten op
             if current_time + horizon <= total_time:
@@ -206,70 +212,75 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
             # reset de acties voor de volgende dag
             if (current_time % 24 == 0) and current_time != 0:
                 print(f"Dag {current_time / 24}")
-                [aankomst, vertrek, keuken_begin, keuken_einde, wm_aan, auto_aan, keuken_aan] = reset(thuis, wm_boolean,
-                                                                                                      auto_boolean,
-                                                                                                      keuken_boolean)
+                [aankomst, vertrek, keuken_begin, keuken_einde, wm_aan, auto_aan, keuken_aan] = reset(thuis, wm_boolean,auto_boolean,keuken_boolean)
+                # foutcontrole
+                T_in_np = np.array(T_in_simulatie)
+                T_time_np = np.array(T_time_simulatie)
+                if thuis:
+                    int_arr_down = np.array([])
+                    int_arr_up = np.array([])
+                    mask = T_in_np < T_in_min
+                    int_arr_down = T_in_np[mask]
+                    if len(int_arr_down) == 0:
+                        err_down = 0
+                    else:
+                        err_down = integrate.simpson(np.full(len(int_arr_down), T_in_min)) - integrate.simpson(
+                            int_arr_down)
+                    mask = T_in_np > T_in_max
+                    int_arr_up = T_in_np[mask]
+                    if len(int_arr_up) == 0:
+                        err_up = 0
+                    else:
+                        err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up), T_in_max))
+                    err_down_opslag.append(err_down)
+                    err_up_opslag.append(err_up)
+                else:
+                    int_arr_down_home = np.array([])
+                    int_arr_up_home = np.array([])
+                    int_arr_down_nothome = np.array([])
+                    int_arr_up_nothome = np.array([])
+
+                    mask = T_in_np[aankomst * 3600:vertrek * 3600] < T_in_min
+                    int_arr_down_home = T_in_np[aankomst * 3600:vertrek * 3600][mask]
+                    if len(int_arr_down_home) == 0:
+                        err_down_home = 0
+                    else:
+                        err_down_home = integrate.simpson(
+                            np.full(len(int_arr_down_home), T_in_min)) - integrate.simpson(int_arr_down_home)
+                    mask = T_in_np[aankomst * 3600:vertrek * 3600] > T_in_max
+                    int_arr_up_home = T_in_np[aankomst * 3600:vertrek * 3600][mask]
+                    if len(int_arr_up_home) == 0:
+                        err_up_home = 0
+                    else:
+                        err_up_home = integrate.simpson(int_arr_up_home) - integrate.simpson(
+                            np.full(len(int_arr_up_home), T_in_max))
+                    mask = T_in_np[:aankomst * 3600] < T_nothome_min
+                    int_arr_down_nothome = T_in_np[:aankomst * 3600][mask]
+                    if len(int_arr_down_nothome) == 0:
+                        err_down_nothome = 0
+                    else:
+                        err_down_nothome = integrate.simpson(
+                            np.full(len(int_arr_down_nothome), T_nothome_min)) - integrate.simpson(int_arr_down_nothome)
+                    mask = T_in_np[:aankomst * 3600] > T_nothome_max
+                    int_arr_up_nothome = T_in_np[:aankomst * 3600][mask]
+                    if len(int_arr_up_nothome) == 0:
+                        err_up_nothome = 0
+                    else:
+                        err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(
+                            np.full(len(int_arr_up_nothome), T_nothome_max))
+                    err_down_home_opslag.append(err_down_home)
+                    err_up_home_opslag.append(err_up_home)
+                    err_down_nothome_opslag.append(err_down_nothome)
+                    err_up_nothome_opslag.append(err_up_nothome)
 
         # update batterij en temp laatste keer
         actions['batstate'].append(bat0)
 
         # foutcontrole
-        T_in_np = np.array(T_in_simulatie)
-        T_time_np = np.array(T_time_simulatie)
         if thuis:
-            int_arr_down = np.array([])
-            int_arr_up = np.array([])
-            mask = T_in_np < T_in_min
-            int_arr_down = T_in_np[mask]
-            if len(int_arr_down) == 0:
-                err_down = 0
-            else:
-                err_down = integrate.simpson(np.full(len(int_arr_down), T_in_min)) - integrate.simpson(int_arr_down)
-            mask = T_in_np > T_in_max
-            int_arr_up = T_in_np[mask]
-            if len(int_arr_up) == 0:
-                err_up = 0
-            else:
-                err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up), T_in_max))
-            print(f"err down: {err_down}")
-            print(f"err up: {err_up}")
+            fout_result = {'err_down': err_down_opslag, 'err_up': err_up_opslag}
         else:
-            int_arr_down_home = np.array([])
-            int_arr_up_home = np.array([])
-            int_arr_down_nothome = np.array([])
-            int_arr_up_nothome = np.array([])
-
-            mask = T_in_np[aankomst * 3600:vertrek * 3600] < T_in_min
-            int_arr_down_home = T_in_np[aankomst * 3600:vertrek * 3600][mask]
-            if len(int_arr_down_home) == 0:
-                err_down_home = 0
-            else:
-                err_down_home = integrate.simpson(np.full(len(int_arr_down_home), T_in_min)) - integrate.simpson(int_arr_down_home)
-                print(f"int T_min: {integrate.simpson(np.full(len(int_arr_down_home), T_in_min))}")
-                print(f"int T_in: {integrate.simpson(int_arr_down_home)}")
-            mask = T_in_np[aankomst * 3600:vertrek * 3600] > T_in_max
-            int_arr_up_home = T_in_np[aankomst * 3600:vertrek * 3600][mask]
-            if len(int_arr_up_home) == 0:
-                err_up_home = 0
-            else:
-                err_up_home = integrate.simpson(int_arr_up_home) - integrate.simpson(np.full(len(int_arr_up_home), T_in_max))
-            mask = T_in_np[:aankomst * 3600] < T_nothome_min
-            int_arr_down_nothome = T_in_np[:aankomst * 3600][mask]
-            if len(int_arr_down_nothome) == 0:
-                err_down_nothome = 0
-            else:
-                err_down_nothome = integrate.simpson(np.full(len(int_arr_down_nothome), T_nothome_min)) - integrate.simpson(int_arr_down_nothome)
-            mask = T_in_np[:aankomst * 3600] > T_nothome_max
-            int_arr_up_nothome = T_in_np[:aankomst * 3600][mask]
-            if len(int_arr_up_nothome) == 0:
-                err_up_nothome = 0
-            else:
-                err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome), T_nothome_max))
-            print(f"err down home: {err_down_home}")
-            print(f"err up home: {err_up_home}")
-            print(f"err down nothome: {err_down_nothome}")
-            print(f"err up nothome: {err_up_nothome}")
-            print(f"err/3600: {(err_down_home + err_up_home + err_down_nothome + err_up_nothome) / 3600}")
+            fout_result = {'err_down_home': err_down_home_opslag, 'err_up_home': err_up_home_opslag,'err_down_nothome': err_down_nothome_opslag, 'err_up_nothome': err_up_nothome_opslag}
 
         # optimalisatie laatste keer
         T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
@@ -325,7 +336,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         print(opslag_resultaat['Iteratie', 0]['result'])
         print("----------------------------------")
 
-        return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum,wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie,zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie,batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+        return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum,wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie,zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie,batstate_final, batcharge_final, batdischarge_final, fout_result]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
 
     testdagen = get_n_days(totaal_dagen, dag)
     temp_out = []
@@ -355,7 +366,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     print(f"thuis input: {thuis}")
 
 
-    [auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, booleanwp, booleanbat, thuis, uren_tot)
+    [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum,wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie,zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie,batstate_final, batcharge_final, batdischarge_final, fout_result] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, booleanwp, booleanbat, thuis, uren_tot)
 
     print(f"netstroom: {netstroom}")
     print(f"min netstroom: {min(netstroom)}")
@@ -479,6 +490,6 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
     plt.legend(loc='upper left')                           #legende linksboven
     plt.show()                                              #toon de grafieken'''
 
-    return auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final
+    return auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result
 
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller_uitbreiding('2022-03-01', 50, False, True, True, True, True, True)
+[auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result] = controller_uitbreiding('2022-01-01', 364, False, True, True, True, True, True)

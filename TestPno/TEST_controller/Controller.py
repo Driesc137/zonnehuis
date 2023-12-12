@@ -260,6 +260,10 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             err_up_nothome = 0
         else:
             err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome),T_nothome_max))
+    if thuis:
+        fout_result = {'err_down': err_down, 'err_up': err_up}
+    else:
+        fout_result = {'err_down_home': err_down_home, 'err_up_home': err_up_home, 'err_down_nothome': err_down_nothome,'err_up_nothome': err_up_nothome}
 
     #optimalisatie laatste keer
     T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
@@ -307,4 +311,4 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1/3)* actions['esell'][i] * netstroom[i] for i in range(0, total_time))
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result]

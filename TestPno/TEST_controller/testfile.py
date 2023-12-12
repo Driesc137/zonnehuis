@@ -1,7 +1,7 @@
 from GetfromDB import getFromDB
 from GetfromDB import getTempFromDB
 from Controller import controller
-testdag = "2022-09-06"
+testdag = "2022-10-30"
 temp_out = getTempFromDB(testdag)[0]
 temp_out = [30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30]
 radiation = getTempFromDB(testdag)[1]

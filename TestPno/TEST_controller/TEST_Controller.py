@@ -285,6 +285,11 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
             print(f"err up nothome: {err_up_nothome}")
             print(f"err/3600: {(err_down_home + err_up_home + err_down_nothome + err_up_nothome)/3600}")
 
+        if thuis:
+            fout_result = {'err_down': err_down, 'err_up': err_up}
+        else:
+            fout_result = {'err_down_home': err_down_home, 'err_up_home': err_up_home,'err_down_nothome': err_down_nothome, 'err_up_nothome': err_up_nothome}
+
         #optimalisatie laatste keer
         T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
         T_m_simulatie = [i - 273.15 for i in T_m_simulatie]
@@ -353,7 +358,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
         tot_verbruik = wm_verbruik + auto_verbruik + keuken_verbruik + wp_verbruik + airco_verbruik
         print(f"tot_verbruik: {tot_verbruik}")
 
-        return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+        return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
 
     testdag = dag
     def get_n_days(n, first_day):
@@ -400,7 +405,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
     print(f"dag input: {testdag}")
     print("-----------------------------------")
 
-    [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_som, esell_final_som, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, booleanwp, booleanbat,  thuis)
+    [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_som, esell_final_som, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, booleanwp, booleanbat,  thuis)
 
     print(f"netstroom: {netstroom}")
     print(f"min netstroom: {min(netstroom)}")
@@ -537,7 +542,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
     plt.legend(loc='upper left')                           #legende linksboven
     plt.show()           '''                                   #toon de grafieken
 
-execute("2022-08-04", False, True, True, True, True, True)
+execute("2022-12-12", True, True, True, True, True, True)
 
 #testdag negatieve prijzen: 29 december, 3 jan!
-#daarnet: 2022-06-03
+#daarnet: 2022-06-03 10.7

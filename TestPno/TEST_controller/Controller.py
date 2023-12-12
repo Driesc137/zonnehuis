@@ -308,7 +308,10 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     esell_final_sum = sum(esell_final)
 
     #batstate in %
-    batstate_final = [(i/batmax)*100 for i in batstate_final]
+    if bat_boolean:
+        batstate_final = [(i/batmax)*100 for i in batstate_final]
+    else:
+        batstate_final = list(np.zeros(25))
 
     zonne_energie_sum = sum(zonne_energie)
     #bereken de kostrpijs_energie met de data opgeslagen in actions

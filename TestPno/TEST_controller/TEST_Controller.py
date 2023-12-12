@@ -247,6 +247,8 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
                 err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
             print(f"err down: {err_down}")
             print(f"err up: {err_up}")
+            tot_opp = (T_in_max - T_in_min) * (14 * 60 * 60)
+            tot_fout = (err_down + err_up) / tot_opp
         else:
             int_arr_down_home = np.array([])
             int_arr_up_home = np.array([])
@@ -284,11 +286,14 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
             print(f"err down nothome: {err_down_nothome}")
             print(f"err up nothome: {err_up_nothome}")
             print(f"err/3600: {(err_down_home + err_up_home + err_down_nothome + err_up_nothome)/3600}")
+            tot_fout = (err_down_home + err_up_home) / ((T_in_max - T_in_min) * (vertrek - aankomst) * 60 * 60) + (err_down_nothome + err_up_nothome) / ((T_nothome_max - T_nothome_min) * (24 - (vertrek - aankomst) * 60 * 60))
 
         if thuis:
             fout_result = {'err_down': err_down, 'err_up': err_up}
         else:
             fout_result = {'err_down_home': err_down_home, 'err_up_home': err_up_home,'err_down_nothome': err_down_nothome, 'err_up_nothome': err_up_nothome}
+        print(f"tot_fout: {tot_fout * 100}%")
+        print(f"tot-juist: {(1 - tot_fout) * 100}%")
 
         #optimalisatie laatste keer
         T_in_simulatie = [i - 273.15 for i in T_in_simulatie]

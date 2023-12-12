@@ -247,7 +247,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
                 err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
             print(f"err down: {err_down}")
             print(f"err up: {err_up}")
-            tot_opp = (T_in_max - T_in_min) * (14 * 60 * 60)
+            tot_opp = (T_in_max - T_in_min) * (24 * 60 * 60)
             tot_fout = (err_down + err_up) / tot_opp
         else:
             int_arr_down_home = np.array([])
@@ -547,7 +547,7 @@ def execute(dag, thuis_bool, wm_bool, auto_bool, keuken_bool, wp_bool, bat_bool)
     plt.legend(loc='upper left')                           #legende linksboven
     plt.show()           '''                                   #toon de grafieken
 
-execute("2022-12-12", True, True, True, True, True, True)
+execute("2022-01-01", False, True, True, True, True, True)
 
 #testdag negatieve prijzen: 29 december, 3 jan!
 #daarnet: 2022-06-03 10.7

@@ -56,6 +56,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         ekeuken = 2.11  # vermogen keuken (kW)
         start_time = 0  # Begin met tijd = 0
         total_time = uren  # Totaal aantal uren die geoptimaliseerd moeten worden
+        dagen = uren/24 # Aantal dagen dat geoptimaliseerd moet worden
         [aankomst, vertrek, keuken_begin, keuken_einde, wm_aan, auto_aan, keuken_aan] = reset(thuis, wm_boolean, auto_boolean, keuken_boolean)
 
         T_in_0 = 20  # begintemperatuur van de binnenlucht (Celsius) voor benadering en simulatie (arbitrair)
@@ -118,7 +119,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         netstroom = [i / 1000 for i in netstroom]
 
         # bereken zonne energie
-        zonne_energie = [i * zp_opp * eff * 0.75 for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
+        zonne_energie = [i * zp_opp * eff for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
         for i in zonne_energie:
             if i > 7000:
                 zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
@@ -278,10 +279,13 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
         # foutcontrole
         if thuis:
-            fout_result = {'err_down': err_down_opslag, 'err_up': err_up_opslag}
+            tot_opp = (T_in_max - T_in_min) * (uren * 60 * 60)
+            tot_fout = ((np.sum(err_down) + np.sum(err_up)) / tot_opp)*100
         else:
-            fout_result = {'err_down_home': err_down_home_opslag, 'err_up_home': err_up_home_opslag,'err_down_nothome': err_down_nothome_opslag, 'err_up_nothome': err_up_nothome_opslag}
+            tot_fout = ((np.sum(err_down_home) + np.sum(err_up_home)) / ((T_in_max - T_in_min) * dagen*(vertrek - aankomst) * 60 * 60) + (np.sum(err_down_nothome) + np.sum(err_up_nothome)) / ((T_nothome_max - T_nothome_min) * dagen*((24 - (vertrek - aankomst)) * 60 * 60)))*100
 
+        print("----------------------------------")
+        print(f"totale_fout= {tot_fout}%")
         # optimalisatie laatste keer
         T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
         T_m_simulatie = [i - 273.15 for i in T_m_simulatie]
@@ -316,27 +320,27 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
                 batcharge_final = value
             elif key == 'batdischarge':
                 batdischarge_final = value
-            print(f"{key}: {value}")
+            #print(f"{key}: {value}")
 
         # som ebuy en esell in kWh
         ebuy_final_sum = sum(ebuy_final)
         esell_final_sum = sum(esell_final)
 
-        print("----------------------------------")
-        print(f"zonne_energie: {zonne_energie}")
+        #print("----------------------------------")
+        #print(f"zonne_energie: {zonne_energie}")
         zonne_energie_sum = sum(zonne_energie)
         print(f"zonne_energie_sum: {zonne_energie_sum}")
         print("----------------------------------")
-        print(f"netstroom: {netstroom}")
+        #print(f"netstroom: {netstroom}")
         # bereken de kostrpijs_energie met de data opgeslagen in actions
         kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1 / 3) * actions['esell'][i] * netstroom[i] for i in range(0, total_time))
         # print("De oplossing is €", kostprijs_energie)
         print(f"kostprijs_energie: {kostprijs_energie}")
         print("----------------------------------")
-        print(opslag_resultaat['Iteratie', 0]['result'])
-        print("----------------------------------")
+        #print(opslag_resultaat['Iteratie', 0]['result'])
+        #print("----------------------------------")
 
-        return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum,wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie,zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie,batstate_final, batcharge_final, batdischarge_final, fout_result]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
+        return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum,wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie,zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie,batstate_final, batcharge_final, batdischarge_final, tot_fout]  #    return [auto_final, wm_final, ebuy_final, esell_final, wpsum_final, aircosum_final, T_in_final]
 
     testdagen = get_n_days(totaal_dagen, dag)
     temp_out = []
@@ -368,17 +372,17 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
     [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum,wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie,zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie,batstate_final, batcharge_final, batdischarge_final, fout_result] = controller(temp_out, netstroom, irradiantie, booleanwm, booleanauto, booleankeuken, booleanwp, booleanbat, thuis, uren_tot)
 
-    print(f"netstroom: {netstroom}")
+    #print(f"netstroom: {netstroom}")
     print(f"min netstroom: {min(netstroom)}")
     print(f"max netstroom: {max(netstroom)}")
     print(f"gem netstroom: {sum(netstroom)/len(netstroom)}")
     print("----------------------------------")
     #print de temp_out en irradiantie
-    print(f"temp_out: {temp_out}")
+    #print(f"temp_out: {temp_out}")
     print(f"max temp_out: {max(temp_out)}")
     print(f"min temp_out: {min(temp_out)}")
     print(f"gem temp_out: {sum(temp_out)/len(temp_out)}")
-    print(f"irradiantie: {irradiantie}")
+    #print(f"irradiantie: {irradiantie}")
     print("----------------------------------")
 
     #bereken min, max en gemiddelde binnentemperatuur van de dag
@@ -492,4 +496,4 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
     return auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result
 
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result] = controller_uitbreiding('2022-01-01', 364, False, True, True, True, True, True)
+[auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result] = controller_uitbreiding('2022-01-01', 12, True, True, True, True, True, True)

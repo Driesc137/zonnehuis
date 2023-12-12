@@ -120,7 +120,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     netstroom = [i/1000 for i in netstroom]
 
     #bereken zonne energie
-    zonne_energie = [i * zp_opp * eff * 0.75 for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
+    zonne_energie = [i * zp_opp * eff for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
     for i in zonne_energie:
         if i > 7000:
             zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
@@ -230,7 +230,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             err_up = 0
         else:
             err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
-        tot_opp = (T_in_max- T_in_min) * (14*60*60)
+        tot_opp = (T_in_max- T_in_min) * (24*60*60)
         tot_fout = ((err_down+ err_up)/tot_opp)*100
 
     else:
@@ -263,7 +263,17 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             err_up_nothome = 0
         else:
             err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome),T_nothome_max))
-        tot_fout = ((err_down_home+err_up_home)/((T_in_max-T_in_min)*(vertrek-aankomst)*60*60) + (err_down_nothome+err_up_nothome)/((T_nothome_max-T_nothome_min)*(24-(vertrek-aankomst)*60*60)))*100
+        print(f"vertrek: {vertrek}")
+        print(f"aankomst: {aankomst}")
+        print(f"T_in_max: {T_in_max}")
+        print(f"T_in_min: {T_in_min}")
+        print(f"T_nothome_max: {T_nothome_max}")
+        print(f"T_nothome_min: {T_nothome_min}")
+        print(f"err_down_home: {err_down_home}")
+        print(f"err_up_home: {err_up_home}")
+        print(f"err_down_nothome: {err_down_nothome}")
+        print(f"err_up_nothome: {err_up_nothome}")
+        tot_fout = ((err_down_home+err_up_home)/((T_in_max-T_in_min)*(vertrek-aankomst)*60*60) + (err_down_nothome+err_up_nothome)/((T_nothome_max-T_nothome_min)*((24-(vertrek-aankomst))*60*60)))*100
 
     if thuis:
         fout_result = {'err_down': err_down, 'err_up': err_up}

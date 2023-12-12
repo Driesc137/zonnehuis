@@ -7,7 +7,7 @@ from TEST_controller.Controller import controller
 from zonderoptimalisatie import custom_dag
 import random
 from datetime import datetime, timedelta
-host_addr = '10.51.10.2'
+host_addr = '192.168.65.39'
 host_port = 8082
 server_sni_hostname = 'example.com'
 server_cert = 'server.crt'
@@ -242,6 +242,7 @@ def run_python_code():
         global dataprijs
         global kost_zonderOP
         global kostverschil
+        global correctheid
         totaal_opgewekte_energie = 0
         if button6 == True:
             dataprijs = [float(prijs12), float(prijs13), float(prijs14), float(prijs15), float(prijs16), float(prijs17), float(prijs18), float(prijs19), float(prijs20), float(prijs21), float(prijs22), float(prijs23), float(prijs0), float(prijs1), float(prijs2), float(prijs3), float(prijs4), float(prijs5), float(prijs6), float(prijs7), float(prijs8), float(prijs9), float(prijs10), float(prijs11)]
@@ -310,7 +311,7 @@ def run_python_code():
             rad = rad0[-18:] + radM[:6]
             
             testHALLO = 'hallo'
-        [auto, wasmachine,keuken_verbruik,gekochte_energie,verkochte_energie,suM1, suM2,sum3,sum4, verbruikwarmtepomp,verbruikeAirco,binnentemp,buitemuur,zonne_energie, zonne_energie_sum,gekkeTemp,t1,t2,opslag,kostprijs_en,bat1,bat2,bat3] = controller(temp,dataprijs,rad,wasmachine_knop,auto_knop,keuken_boolean,airco_knop,batterij_knop,thuis_zijn)
+        [auto, wasmachine,keuken_verbruik,gekochte_energie,verkochte_energie,suM1, suM2,sum3,sum4, verbruikwarmtepomp,verbruikeAirco,binnentemp,buitemuur,zonne_energie, zonne_energie_sum,gekkeTemp,t1,t2,opslag,kostprijs_en,bat1,bat2,bat3,correctheid] = controller(temp,dataprijs,rad,wasmachine_knop,auto_knop,keuken_boolean,airco_knop,batterij_knop,thuis_zijn)
         result = "Dit is de uitvoer van de Python-code."
         global batpercentage
         global total_verbruikeAirco
@@ -372,7 +373,7 @@ def run_python_code():
         gemiddeldeElektriciteitsprijs = sum(dataprijs)/len(dataprijs)
         gemiddeldeElektriciteitsprijs = gemiddeldeElektriciteitsprijs/1000
         gemiddeldeElektriciteitsprijs = round(gemiddeldeElektriciteitsprijs,5)
-        kost_zonderOP = custom_dag(dataprijs,rad,thuis_zijn,True,wasmachine_knop,auto_knop,keuken_boolean,temp)
+        kost_zonderOP = custom_dag(dataprijs,rad,thuis_zijn,airco_knop,wasmachine_knop,auto_knop,keuken_boolean,temp)
         kost_zonderOP = round(kost_zonderOP,2)
         kostverschil = kost_zonderOP - totale_prijs_energie
         kostverschil = round(kostverschil,2)
@@ -392,7 +393,7 @@ def pagina1():
 @app.route('/page2.html')
 def pagina2():
     weather_statuses = ['cloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'rainy', 'cloudy', 'sunny', 'rainy', 'cloudy', 'sunny']
-    return render_template('page2.html', weather_statuses=weather_statuses, gemiddeldeTemperatuur=gemiddeldeTemperatuur, gemiddeldeBinnenTemperatuur=gemiddeldeBinnenTemperatuur,totaal_verbruikte_energie_airco=totaal_verbruikte_energie_airco,totaal_verbruikte_energie_warmtepomp=totaal_verbruikte_energie_warmtepomp)
+    return render_template('page2.html', weather_statuses=weather_statuses, gemiddeldeTemperatuur=gemiddeldeTemperatuur, gemiddeldeBinnenTemperatuur=gemiddeldeBinnenTemperatuur,totaal_verbruikte_energie_airco=totaal_verbruikte_energie_airco,totaal_verbruikte_energie_warmtepomp=totaal_verbruikte_energie_warmtepomp,correctheid = correctheid)
 
 @app.route('/page3.html')
 def pagina3():
@@ -436,19 +437,19 @@ def pagina3():
     wpbooleanforserver = ''.join(wpbooleanforserver)
     aircobooleanforserver = [str(num) for num in aircobooleanforserver if isinstance(num, int)]
     aircobooleanforserver = ''.join(aircobooleanforserver)
-    a = '[auto] :'  + autobooleanforserver 
-    b = '[wasmachine] :' + wasmachinebooleanforserver
-    c = '[keuken] :' + keukenbooleanforserver
-    d ='[warmtepomp]' + wpbooleanforserver
-    e = '[airco]' + aircobooleanforserver
-    msg = a
+    a = '[CR] '  + '[' + autobooleanforserver + ']'
+    b = '[WM] ' + '['+wasmachinebooleanforserver+ ']'
+    c = '[OV] ' + '['+keukenbooleanforserver+ ']'
+    d ='[HE] ' + '[' +wpbooleanforserver+ ']'
+    e = '[AC] ' + '['+aircobooleanforserver+ ']'
+    '''msg = a
     conn.send(msg.encode(FORMAT))
 
     if msg == DISCONNECT_MSG:
          connected = False
     else:
         msg = conn.recv(SIZE).decode(FORMAT)
-        print(f"[SERVER] {msg}")
+        print(f"[SERVER] {msg}")'''
     msg = b
     conn.send(msg.encode(FORMAT))
 
@@ -465,7 +466,7 @@ def pagina3():
     else:
         msg = conn.recv(SIZE).decode(FORMAT)
         print(f"[SERVER] {msg}")
-    msg = d
+    '''msg = d
     conn.send(msg.encode(FORMAT))
 
     if msg == DISCONNECT_MSG:
@@ -480,7 +481,7 @@ def pagina3():
          connected = False
     else:
         msg = conn.recv(SIZE).decode(FORMAT)
-        print(f"[SERVER] {msg}")
+        print(f"[SERVER] {msg}")'''
     return render_template('index.html', selectedDate=selected_date, result=result ,keuken=keuken,totaal_opgewekte_energie=totaal_opgewekte_energie, totaal_verbruikte_energie = totaal_verbruikte_energie,totale_prijs_energie=totale_prijs_energie,gemiddeldeElektriciteitsprijs=gemiddeldeElektriciteitsprijs,kost_zonderOP=kost_zonderOP,kostverschil=kostverschil)
 if __name__ == '__main__':
     app.run()

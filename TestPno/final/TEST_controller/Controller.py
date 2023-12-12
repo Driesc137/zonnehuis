@@ -120,7 +120,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     netstroom = [i/1000 for i in netstroom]
 
     #bereken zonne energie
-    zonne_energie = [i * zp_opp * eff * 0.75 for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
+    zonne_energie = [i * zp_opp * eff for i in irradiantie]  # lijst met beschikbare zonne-energie (W) per uur
     for i in zonne_energie:
         if i > 7000:
             zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
@@ -230,6 +230,9 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             err_up = 0
         else:
             err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
+        tot_opp = (T_in_max- T_in_min) * (14*60*60)
+        tot_fout = ((err_down+ err_up)/tot_opp)*100
+
     else:
         int_arr_down_home = np.array([])
         int_arr_up_home = np.array([])
@@ -260,6 +263,12 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             err_up_nothome = 0
         else:
             err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome),T_nothome_max))
+        tot_fout = ((err_down_home+err_up_home)/((T_in_max-T_in_min)*(vertrek-aankomst)*60*60) + (err_down_nothome+err_up_nothome)/((T_nothome_max-T_nothome_min)*(24-(vertrek-aankomst)*60*60)))*100
+
+    if thuis:
+        fout_result = {'err_down': err_down, 'err_up': err_up}
+    else:
+        fout_result = {'err_down_home': err_down_home, 'err_up_home': err_up_home, 'err_down_nothome': err_down_nothome,'err_up_nothome': err_up_nothome}
 
     #optimalisatie laatste keer
     T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
@@ -299,12 +308,14 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     esell_final_sum = sum(esell_final)
 
     #batstate in %
-    batstate_final = [(i/batmax)*100 for i in batstate_final]
-
+    if batmax == 0:
+        batstate_final = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    else:
+        batstate_final = [(i/batmax)*100 for i in batstate_final]
 
     zonne_energie_sum = sum(zonne_energie)
     #bereken de kostrpijs_energie met de data opgeslagen in actions
     kostprijs_energie = sum(actions['ebuy'][i] * netstroom[i] - (1/3)* actions['esell'][i] * netstroom[i] for i in range(0, total_time))
 
 
-    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final]
+    return [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final, aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, tot_fout]

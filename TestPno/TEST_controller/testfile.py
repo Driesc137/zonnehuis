@@ -12,7 +12,7 @@ ekeuken = 2.11  # vermogen keuken (kW)
 [auto_final, wm_final, keuken_final, ebuy_final, esell_final, ebuy_final_sum, esell_final_sum, wpsum_final,
         aircosum_final, wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum,
         T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final,
-        batcharge_final, batdischarge_final, tot_fout] = controller(temp_out, price, radiation, True,True, True, True, True, False)
+        batcharge_final, batdischarge_final, tot_fout] = controller(temp_out, price, radiation, False,False, False, False, False, False)
 wm_verbruik = sum(wm_final) * ewm
 auto_verbruik = sum(auto_final) * eau
 keuken_verbruik = sum(keuken_final) * ekeuken

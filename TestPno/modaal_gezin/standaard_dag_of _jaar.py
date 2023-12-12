@@ -12,6 +12,7 @@ def scuffed_warmte(T_in0, T_m0, S_rad, T_out, thuis):
     if T_in0 <= 19 - 3*thuis:
         for i in range(0,14):
             temp_lijst = simuleer_warmte_model(delta_T, i*300, 0, T_out,S_rad,T_in0,T_m0)
+            print(temp_lijst[0][-1])
             if temp_lijst[0][-1] >=19-3*thuis and temp_lijst[0][-1] <= 22-3*thuis:
                 return i*0.3 , temp_lijst[0][-1], temp_lijst[1][-1]
         return 4 , temp_lijst[0][-1], temp_lijst[1][-1]
@@ -42,10 +43,10 @@ verbruik_keuken = 3.3905
 
 def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolkeuken):
     def zonnepaneelE(radiantie):
-        if (radiantie * 0.2 * 46.2*0.75) / 1000 > 6.3:
+        if (radiantie * 0.2 * 46.2 * 0.75) / 1000 > 6.3:
             return 6.3
         else:
-            return (radiantie * 0.2 * 46.2*0.75) / 1000
+            return (radiantie * 0.2 * 46.2 * 0.75) / 1000
 
     #prijs in kwh ipv Mwh
     e_kost = [i/1000 for i in ekost]
@@ -176,7 +177,7 @@ def dag_berekenen(dag, thuis):
     T_out = []
     for i in range(dag*24, (dag+1)*24):
         T_out.append(float(removeSpaces(temp_en_ir[i][1])))
-
+    print(T_out)
     [kost, groene_energie, net_energie] = standaarddag(e_prijzen, radiantie, T_out ,thuis, boolwp, boolwas, boolauto, boolkeuken)
     return kost, groene_energie, net_energie
 
@@ -201,7 +202,7 @@ def periode_berekenen(startdag, einddag):
         net_energie_tot += net_energie
     return kost_tot, kost_lijst, groene_energie_tot, net_energie_tot
 
-a = periode_berekenen(0, 363)
+a = periode_berekenen(348, 348)
 print(a[0])
 print(a[1])
 

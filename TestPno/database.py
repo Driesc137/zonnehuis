@@ -103,7 +103,7 @@ db.commit()
 
 
 
-# Stel de datum in die je wilt verwijderen
+'''# Stel de datum in die je wilt verwijderen
 teVerwijderenDatum = '2022-10-30T02:00:00'
 
 # Voer de DELETE-query uit om het record met de opgegeven datum te verwijderen
@@ -112,7 +112,6 @@ mycursor.execute(sql, (teVerwijderenDatum,))
 
 # Commit de transactie
 db.commit()
-
 
 
 sql = "INSERT INTO weer (naam, datum, temp, feelslike, dew, humidity, precip, precipprob, preciptype, snow, snowdepth, windgust, windspeed, winddir, sealevelpressure, cloudcover, visibility, solarradiation, solarenergy, uvindex, severerisk, conditions, icon, stations) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
@@ -127,7 +126,7 @@ values = (
     '78.83',
     '0',
     '0',
-    '',
+    '0',
     '0',
     '0',
     '28.4',
@@ -142,16 +141,16 @@ values = (
     '10',
     'clear',
     'clear-night',
-    ''
+    '0'
 )
 
 mycursor.execute(sql, values)
 
 # Commit de transactie
-db.commit()
+db.commit()'''
 
 #mycursor.execute("SELECT * FROM weer")
-mycursor.execute("SELECT datum, solarradiation FROM weer WHERE datum = '2022-03-27T02:00:00'")
+mycursor.execute("SELECT datum, temp FROM weer WHERE datum = '2022-10-30T02:00:00'")
 for x in mycursor:
     resultaat2 = (list(x))
 resultaat2[1] = removeSpaces(resultaat2[1])

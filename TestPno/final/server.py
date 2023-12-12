@@ -5,7 +5,7 @@ import ssl
 import time
 led_pin = 17
 
-listen_addr = '10.46.153.254'
+listen_addr = '10.51.10.2'
 listen_port = 8082
 server_cert = 'server.crt'
 server_key = 'server.key'

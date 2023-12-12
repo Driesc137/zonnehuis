@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from TEST_controller.GetfromDB import getFromDB,getTempFromDB
 from TEST_controller.Controller import controller
-from zonderoptimalisatie import custom_dag
+from TestPno.final.zonderoptimalisatie import custom_dag
 import random
 from datetime import datetime, timedelta
 def filter_indices(input_list):

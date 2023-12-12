@@ -8,21 +8,21 @@ from TestPno.TEST_controller.GetfromDB import vervang_komma_door_punt
 from TestPno.TEST_controller.Simuleer_warmte_model import simuleer_warmte_model
 
 delta_T = 1
-def scuffed_warmte(T_in0, T_m0, S_rad, T_out, thuis):
-    if T_in0 <= 19 - 3*thuis:
+def scuffed_warmte(T_in0, T_m0, S_rad, T_out, niet_thuis):
+    if T_in0 <= 19 - 3*niet_thuis:
         for i in range(0,14):
             temp_lijst = simuleer_warmte_model(delta_T, i*300, 0, T_out,S_rad,T_in0,T_m0)
-            print(temp_lijst[0][-1])
-            if temp_lijst[0][-1] >=19-3*thuis and temp_lijst[0][-1] <= 22-3*thuis:
+
+            if temp_lijst[0][-1] >=19-3*niet_thuis and temp_lijst[0][-1] <= 22-3*niet_thuis:
                 return i*0.3 , temp_lijst[0][-1], temp_lijst[1][-1]
         return 4 , temp_lijst[0][-1], temp_lijst[1][-1]
-    elif T_in0 > 19-3*thuis and T_in0 <= 23-3*thuis:
+    elif T_in0 > 19-3*niet_thuis and T_in0 <= 23-3*niet_thuis:
         temp_lijst = simuleer_warmte_model(delta_T, 0, 0, T_out,S_rad,T_in0,T_m0)
         return 0 , temp_lijst[0][-1], temp_lijst[1][-1]
     else:
         for i in range(0,14):
             temp_lijst = simuleer_warmte_model(delta_T, 0, i*300, T_out,S_rad,T_in0,T_m0)
-            if temp_lijst[0][-1] >=19-3*thuis and temp_lijst[0][-1] <= 22-3*thuis:
+            if temp_lijst[0][-1] >=19-3*niet_thuis and temp_lijst[0][-1] <= 22-3*niet_thuis:
                 return i*0.3 , temp_lijst[0][-1], temp_lijst[1][-1]
         return 4 , temp_lijst[0][-1], temp_lijst[1][-1]
 
@@ -40,13 +40,13 @@ auto_verbruik = 7.4
 warmtepomp_verbruik_hoog = 1.5
 warmtepomp_verbruik_laag = 0
 verbruik_keuken = 3.3905
-
+zonnepaneel_teruggave = 1/3
 def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolkeuken):
     def zonnepaneelE(radiantie):
-        if (radiantie * 0.2 * 46.2 * 0.75) / 1000 > 6.3:
+        if (radiantie * 0.2 * 46.2) / 1000 > 6.3:
             return 6.3
         else:
-            return (radiantie * 0.2 * 46.2 * 0.75) / 1000
+            return (radiantie * 0.2 * 46.2) / 1000
 
     #prijs in kwh ipv Mwh
     e_kost = [i/1000 for i in ekost]
@@ -72,7 +72,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
         T_m0 = result[2]
         delta_e = result[0]*boolwp-zonnepaneelE(radiantie[i])
         if delta_e < 0:
-            kost += 1/3*delta_e*e_kost[i]
+            kost += zonnepaneel_teruggave*delta_e*e_kost[i]
             groene_energie += result[0]*boolwp
         elif delta_e > 0:
             groene_energie += zonnepaneelE(radiantie[i])
@@ -88,7 +88,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
         T_m0 = result[2]
         delta_e = result[0]*boolwp-zonnepaneelE(radiantie[i])
         if delta_e < 0:
-            kost += 1/3*delta_e*e_kost[i]
+            kost += zonnepaneel_teruggave*delta_e*e_kost[i]
             groene_energie += result[0]*variabele*boolwp
         elif delta_e > 0:
             groene_energie += zonnepaneelE(radiantie[i])
@@ -101,7 +101,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
     Delta_e = result[0]*boolwp-zonnepaneelE(radiantie[17])
     if Delta_e < 0:
         groene_energie += result[0]*boolwp
-        kost += 1/3*Delta_e*e_kost[17]
+        kost += zonnepaneel_teruggave*Delta_e*e_kost[17]
     elif Delta_e > 0:
         groene_energie += zonnepaneelE(radiantie[17])
         net_energie += Delta_e
@@ -115,7 +115,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
         delta_e = result[0]*boolwp + verbruik_keuken*boolkeuken+auto_verbruik*boolauto-zonnepaneelE(radiantie[i])
         if delta_e < 0:
             groene_energie += result[0]*boolwp + verbruik_keuken+auto_verbruik
-            kost += 1/3*delta_e*e_kost[i]
+            kost += zonnepaneel_teruggave*delta_e*e_kost[i]
         elif delta_e > 0:
             groene_energie += zonnepaneelE(radiantie[i])
             net_energie += delta_e
@@ -127,7 +127,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
     delta_e_20 = result[0]*boolwp+auto_verbruik*boolauto+2.5*boolwas-zonnepaneelE(radiantie[20])
     if delta_e_20 < 0:
         groene_energie += result[0]*boolwp + auto_verbruik + 2.5
-        kost += 1/3*delta_e_20*e_kost[20]
+        kost += zonnepaneel_teruggave*delta_e_20*e_kost[20]
     elif delta_e_20 > 0:
         groene_energie += zonnepaneelE(radiantie[20])
         net_energie += delta_e_20
@@ -139,7 +139,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
     delta_e_21 = result[0]*boolwp+2.5*boolwas-zonnepaneelE(radiantie[21])
     if delta_e_21 < 0:
         groene_energie += result[0]*boolwp + 2.5
-        kost += 1/3*delta_e_21*e_kost[21]
+        kost += zonnepaneel_teruggave*delta_e_21*e_kost[21]
     elif delta_e_21 > 0:
         groene_energie += zonnepaneelE(radiantie[21])
         net_energie += delta_e_21
@@ -152,7 +152,7 @@ def standaarddag(ekost, radiantie, temp_out, thuis, bolwp, bolwas, bolauto, bolk
         delta_e = result[0]*boolwp-zonnepaneelE(radiantie[i])
         if delta_e < 0:
             groene_energie += result[0]*boolwp
-            kost += 1/3*delta_e*e_kost[i]
+            kost += zonnepaneel_teruggave*delta_e*e_kost[i]
         elif delta_e > 0:
             groene_energie += zonnepaneelE(radiantie[i])
             net_energie += delta_e
@@ -177,7 +177,7 @@ def dag_berekenen(dag, thuis):
     T_out = []
     for i in range(dag*24, (dag+1)*24):
         T_out.append(float(removeSpaces(temp_en_ir[i][1])))
-    print(T_out)
+
     [kost, groene_energie, net_energie] = standaarddag(e_prijzen, radiantie, T_out ,thuis, boolwp, boolwas, boolauto, boolkeuken)
     return kost, groene_energie, net_energie
 
@@ -191,9 +191,11 @@ def periode_berekenen(startdag, einddag):
     net_energie_tot = 0
     kost_lijst = []
     for i in range(startdag, einddag+1):
-        if startdag//7 <= 1:
+        if startdag // 7 <= 1:
             thuis = True
-        else: thuis = False
+        else:
+            thuis = False
+
 
         [kost, groene_energie, net_energie] = dag_berekenen(i, thuis)
         kost_lijst.append(kost)
@@ -202,9 +204,9 @@ def periode_berekenen(startdag, einddag):
         net_energie_tot += net_energie
     return kost_tot, kost_lijst, groene_energie_tot, net_energie_tot
 
-a = periode_berekenen(348, 348)
+a = periode_berekenen(0, 362)
 print(a[0])
-print(a[1])
+
 
 
 

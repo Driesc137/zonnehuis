@@ -274,6 +274,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
                     err_down_nothome_opslag.append(err_down_nothome)
                     err_up_nothome_opslag.append(err_up_nothome)
 
+
         # update batterij en temp laatste keer
         actions['batstate'].append(bat0)
 
@@ -325,6 +326,8 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         # som ebuy en esell in kWh
         ebuy_final_sum = sum(ebuy_final)
         esell_final_sum = sum(esell_final)
+        print(f"ebuy som: {ebuy_final_sum}")
+        print(f"esell som: {esell_final_sum}")
 
         #print("----------------------------------")
         #print(f"zonne_energie: {zonne_energie}")
@@ -496,4 +499,4 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
 
     return auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result
 
-[auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result] = controller_uitbreiding('2022-01-01', 363, False, True, True, True, True, True)
+[auto_final, wm_final, keuken_final, ebuy_final, esell_final, wpsum_final, aircosum_final,wp_actions, airco_actions, T_in_final, T_m_final, zonne_energie, zonne_energie_sum, T_in_simulatie, T_m_simulatie, T_time_simulatie, opslag_resultaat, kostprijs_energie, batstate_final, batcharge_final, batdischarge_final, fout_result] = controller_uitbreiding('2022-01-01', 31, False, True, True, True, True, True)

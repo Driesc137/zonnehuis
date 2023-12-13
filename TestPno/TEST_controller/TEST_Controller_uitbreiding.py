@@ -15,7 +15,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         first_day = datetime.datetime.strptime(first_day, '%Y-%m-%d')
         future_dates = []
 
-        for i in range(n):
+        for i in range(n+1):
             future_date = first_day + datetime.timedelta(days=i)
             future_dates.append(future_date.strftime('%Y-%m-%d'))
 
@@ -68,11 +68,11 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
             T_in_max = 22  # maximale binnentemperatuur (Celsius)
             T_m_min = -10  # minimale temperatuur van de bouwmassa (Celsius)
             T_m_max = 50  # maximale temperatuur van de bouwmassa (Celsius)
-            T_nothome_min = 16  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+            '''T_nothome_min = 16  # minimale binnentemperatuur als er niemand thuis is (Celsius)
             if max(tempinput) > 25:
                 T_nothome_max = max(tempinput)  # maximale binnentemperatuur als er niemand thuis is (Celsius)
             else:
-                T_nothome_max = 25  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                T_nothome_max = 25  # maximale binnentemperatuur als er niemand thuis is (Celsius)'''
         else:
             P_max = 0  # maximaal vermogen van de warmtepomp (W)
             P_max_airco = 0  # maximaal vermogen van de airco (W)
@@ -80,15 +80,15 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
             T_in_max = 50  # maximale binnentemperatuur (Celsius)
             T_m_min = -10  # minimale temperatuur van de bouwmassa (Celsius)
             T_m_max = 50  # maximale temperatuur van de bouwmassa (Celsius)
-            T_nothome_min = -10  # minimale binnentemperatuur als er niemand thuis is (Celsius)
-            T_nothome_max = 50  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+            '''T_nothome_min = -10  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+            T_nothome_max = 50  # maximale binnentemperatuur als er niemand thuis is (Celsius)'''
 
         if bat_boolean:
             batmax = 10000  # maximale batterijcapaciteit (kWh)
             batmin = 0  # minimale batterijcapaciteit (kWh)
             bat0 = 0  # begintoestand batterij (kWh)
-            batmaxcharge = batmax  # maximale laadsnelheid batterij (kW)
-            batmaxdischarge = batmax  # maximale ontlaadsnelheid batterij (kW)
+            batmaxcharge = batmax/2  # maximale laadsnelheid batterij (kW)
+            batmaxdischarge = batmax/2  # maximale ontlaadsnelheid batterij (kW)
         else:
             batmax = 0  # maximale batterijcapaciteit (kWh)
             batmin = 0  # minimale batterijcapaciteit (kWh)
@@ -112,8 +112,7 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         T_in_max = T_in_max + 273.15
         T_m_min = T_m_min + 273.15
         T_m_max = T_m_max + 273.15
-        T_nothome_min = T_nothome_min + 273.15
-        T_nothome_max = T_nothome_max + 273.15
+
 
         # netstroom naar €/kWh
         netstroom = [i / 1000 for i in netstroom]
@@ -149,17 +148,39 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
             # bepaal de horizon lengte, optimaliseer en sla de resultaten op
             if current_time + horizon <= total_time:
                 horizon_end = current_time + horizon  # einde van de huidige horizon
+                if wp_boolean:
+                    T_nothome_min = 16  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+                    if max(tempinput[current_time:horizon_end]) > 25:
+                        T_nothome_max = max(tempinput[current_time:horizon_end])  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                    else:
+                        T_nothome_max = 25  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                else:
+                    T_nothome_min = -10  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+                    T_nothome_max = 50  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                T_nothome_min = T_nothome_min + 273.15
+                T_nothome_max = T_nothome_max + 273.15
                 opslag_resultaat['Iteratie', current_time] = optimaliseer(horizon,irradiantie[current_time:horizon_end],netstroom[current_time:horizon_end],zonne_energie[current_time:horizon_end], ewm,eau, ekeuken, delta_t, M, wm_aan, auto_aan,keuken_aan, T_in_0, T_m_0,temp_out[current_time: horizon_end], P_max,P_max_airco, T_in_min, T_in_max, T_m_min,T_m_max, T_nothome_min, T_nothome_max, thuis,aankomst, vertrek, keuken_begin, keuken_einde,batmax, batmin, batmaxcharge, batmaxdischarge,bat0)  # optimalisatie a.d.h.v. benadering
 
             else:
                 horizon_end = total_time  # einde van de huidige horizon, zorgt ervoor dat de controller niet verder dan de totale tijd optimaliseert
                 new_horizon = horizon - ((current_time + horizon) - total_time)  # nieuwe horizon die niet over totale tijd optimaliseert
+                if wp_boolean:
+                    T_nothome_min = 16  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+                    if max(tempinput[current_time:horizon_end]) > 25:
+                        T_nothome_max = max(tempinput[current_time:horizon_end])  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                    else:
+                        T_nothome_max = 25  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                else:
+                    T_nothome_min = -10  # minimale binnentemperatuur als er niemand thuis is (Celsius)
+                    T_nothome_max = 50  # maximale binnentemperatuur als er niemand thuis is (Celsius)
+                T_nothome_min = T_nothome_min + 273.15
+                T_nothome_max = T_nothome_max + 273.15
                 opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon,irradiantie[current_time:horizon_end],netstroom[current_time:horizon_end],zonne_energie[current_time:horizon_end], ewm,eau, ekeuken, delta_t, M, wm_aan, auto_aan,keuken_aan, T_in_0, T_m_0,temp_out[current_time: horizon_end], P_max,P_max_airco, T_in_min, T_in_max, T_m_min,T_m_max, T_nothome_min, T_nothome_max, thuis,aankomst, vertrek, keuken_begin, keuken_einde,batmax, batmin, batmaxcharge, batmaxdischarge,bat0)  # optimalisatie a.d.h.v. benadering
 
             # controleer de acties die de controller heeft gekozen voor dit interval, deze worden de beginvoorwaarden voor het volgende interval
-            wm_aan = wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0]  # aantal uren dat de wasmachine nog aan moet staan
-            auto_aan = auto_aan - opslag_resultaat['Iteratie', current_time]['auto'][0]  # aantal uren dat de auto nog aan moet staan
-            keuken_aan = keuken_aan - opslag_resultaat['Iteratie', current_time]['keuken'][0]  # aantal uren dat de keuken nog aan moet staan
+            wm_aan = int(wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0])  # aantal uren dat de wasmachine nog aan moet staan
+            auto_aan = int(auto_aan - opslag_resultaat['Iteratie', current_time]['auto'][0])  # aantal uren dat de auto nog aan moet staan
+            keuken_aan = int(keuken_aan - opslag_resultaat['Iteratie', current_time]['keuken'][0])  # aantal uren dat de keuken nog aan moet staan
 
             # sla de resultaten van de optimalisatie voor de current time op. Deze worden de definitieve acties
             for i in attributes:
@@ -273,6 +294,41 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
                     err_up_home_opslag.append(err_up_home)
                     err_down_nothome_opslag.append(err_down_nothome)
                     err_up_nothome_opslag.append(err_up_nothome)
+            #print alles
+            '''print("----------------------------------")
+            print(f"current_time: {current_time}")
+            print(f"wm_aan: {wm_aan}")
+            print(f"auto_aan: {auto_aan}")
+            print(f"keuken_aan: {keuken_aan}")
+            print(f"bat0: {bat0}")
+            print(f"batmax: {batmax}")
+            print(f"batmin: {batmin}")
+            print(f"batmaxcharge: {batmaxcharge}")
+            print(f"batmaxdischarge: {batmaxdischarge}")
+            print(f"batstate: {actions['batstate']}")
+            print(f"batcharge: {actions['batcharge']}")
+            print(f"batdischarge: {actions['batdischarge']}")
+            print(f"ebuy: {actions['ebuy']}")
+            print(f"esell: {actions['esell']}")
+            print(f"wpsum: {actions['wpsum']}")
+            print(f"aircosum: {actions['aircosum']}")
+            print(f"auto: {actions['auto']}")
+            print(f"wm: {actions['wm']}")
+            print(f"keuken: {actions['keuken']}")
+            print(f"wp_actions: {wp_actions}")
+            print(f"airco_actions: {airco_actions}")
+            print(f"T_in: {actions['Binnentemperatuur']}")
+            print(f"T_m: {actions['Bouwmassa']}")
+            print(f"zonne_energie: {zonne_energie[current_time]}")
+            print(f"netstroom: {netstroom[current_time]}")
+            print(f"T_in_0 = {T_in_0 - 273.15}")
+            print(f"T_m_0 = {T_m_0 - 273.15}")
+            print(f"wp_max = {P_max}")
+            print(f"airco_max = {P_max_airco}")
+            print(f"vertrek = {vertrek}")
+            print(f"aankomst = {aankomst}")
+            print(f"keuken_begin = {keuken_begin}")
+            print(f"keuken_einde = {keuken_einde}")'''
 
 
         # update batterij en temp laatste keer
@@ -356,7 +412,12 @@ def controller_uitbreiding(dag, totaal_dagen, thuis, wm_boolean, auto_boolean, k
         temp_out += getTempFromDB(i)[0]
         irradiantie += getTempFromDB(i)[1]
         netstroom += getFromDB(i)
-
+    temp_out = temp_out[:len(temp_out) - 18]
+    temp_out = temp_out[6:]
+    irradiantie = irradiantie[:len(irradiantie) - 18]
+    irradiantie = irradiantie[6:]
+    netstroom = netstroom[:len(netstroom) - 18]
+    netstroom = netstroom[6:]
     uren_tot = 24 * totaal_dagen
 
     booleanwm = wm_boolean

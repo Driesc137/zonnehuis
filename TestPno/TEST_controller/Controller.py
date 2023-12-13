@@ -88,8 +88,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         batmax = 10000                     #maximale batterijcapaciteit (kWh)
         batmin = 0                      #minimale batterijcapaciteit (kWh)
         bat0 = 0                        #begintoestand batterij (kWh)
-        batmaxcharge = batmax                #maximale laadsnelheid batterij (kW)
-        batmaxdischarge = batmax             #maximale ontlaadsnelheid batterij (kW)
+        batmaxcharge = batmax/2                #maximale laadsnelheid batterij (kW)
+        batmaxdischarge = batmax/2             #maximale ontlaadsnelheid batterij (kW)
     else:
         batmax = 0                     #maximale batterijcapaciteit (kWh)
         batmin = 0                      #minimale batterijcapaciteit (kWh)

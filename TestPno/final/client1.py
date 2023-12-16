@@ -318,7 +318,10 @@ def run_python_code():
         if correctheid:
             correctheid = 100 - correctheid
         batpercentage = bat1
-        batpercentage = batpercentage[0:24]
+        batpercentage = batpercentage[0:25]
+        for x in batpercentage:
+            if x < 0:
+                x = 0
         total_verbruikeAirco = sum(verbruikeAirco)/1000
         for i in range(0,len(rad)):
             a = rad[i]*0.2*22.4 #opgewekte energie
@@ -386,7 +389,7 @@ def run_python_code():
         for i in range(len(opgewekte_energie)):
             opgewekte_energie[i] = opgewekte_energie[i] / 1000
         for i in range(len(verbruikeAirco)):
-            verbruikeAirco[i] = verbruikeAirco[i] / 1000
+            verbruikeAirco[i] = verbruikeAirco[i]
         
         return render_template('index.html', selectedDate=selected_date, result=result,keuken=keuken,totaal_opgewekte_energie=totaal_opgewekte_energie, totaal_verbruikte_energie = totaal_verbruikte_energie,totale_prijs_energie=totale_prijs_energie,gemiddeldeElektriciteitsprijs=gemiddeldeElektriciteitsprijs,kost_zonderOP=kost_zonderOP,kostverschil=kostverschil)
     return render_template('indextest.html')
@@ -488,8 +491,8 @@ def pagina3():
         print(f"[SERVER] {msg}")
     return render_template('index.html', selectedDate=selected_date, result=result ,keuken=keuken,totaal_opgewekte_energie=totaal_opgewekte_energie, totaal_verbruikte_energie = totaal_verbruikte_energie,totale_prijs_energie=totale_prijs_energie,gemiddeldeElektriciteitsprijs=gemiddeldeElektriciteitsprijs,kost_zonderOP=kost_zonderOP,kostverschil=kostverschil)
 if __name__ == '__main__':
-    app.run(host = '192.168.0.220')
-#host='192.168.98.15'
+    app.run()
+
 
 
 

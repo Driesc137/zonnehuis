@@ -245,9 +245,9 @@ def run_python_code():
         global correctheid
         totaal_opgewekte_energie = 0
         if button6 == True:
-            dataprijs = [float(prijs12), float(prijs13), float(prijs14), float(prijs15), float(prijs16), float(prijs17), float(prijs18), float(prijs19), float(prijs20), float(prijs21), float(prijs22), float(prijs23), float(prijs0), float(prijs1), float(prijs2), float(prijs3), float(prijs4), float(prijs5), float(prijs6), float(prijs7), float(prijs8), float(prijs9), float(prijs10), float(prijs11)]
-            temp = [float(customTemp12), float(customTemp13), float(customTemp14), float(customTemp15), float(customTemp16), float(customTemp17), float(customTemp18), float(customTemp19), float(customTemp20), float(customTemp21), float(customTemp22), float(customTemp23), float(customTemp0), float(customTemp1), float(customTemp2), float(customTemp3), float(customTemp4), float(customTemp5), float(customTemp6), float(customTemp7), float(customTemp8), float(customTemp9), float(customTemp10), float(customTemp11)]
-            rad = [float(customrad12), float(customrad13), float(customrad14), float(customrad15), float(customrad16), float(customrad17), float(customrad18), float(customrad19), float(customrad20), float(customrad21), float(customrad22), float(customrad23), float(customrad0), float(customrad1), float(customrad2), float(customrad3), float(customrad4), float(customrad5), float(customrad6), float(customrad7), float(customrad8), float(customrad9), float(customrad10), float(customrad11)]
+            dataprijs = [float(prijs6), float(prijs7), float(prijs8), float(prijs9), float(prijs10), float(prijs11),float(prijs12), float(prijs13), float(prijs14), float(prijs15), float(prijs16), float(prijs17), float(prijs18), float(prijs19), float(prijs20), float(prijs21), float(prijs22), float(prijs23), float(prijs0), float(prijs1), float(prijs2), float(prijs3), float(prijs4), float(prijs5)]
+            temp = [float(customTemp6), float(customTemp7), float(customTemp8), float(customTemp9), float(customTemp10), float(customTemp11),float(customTemp12), float(customTemp13), float(customTemp14), float(customTemp15), float(customTemp16), float(customTemp17), float(customTemp18), float(customTemp19), float(customTemp20), float(customTemp21), float(customTemp22), float(customTemp23), float(customTemp0), float(customTemp1), float(customTemp2), float(customTemp3), float(customTemp4), float(customTemp5),]
+            rad = [float(customrad6), float(customrad7), float(customrad8), float(customrad9), float(customrad10), float(customrad11),float(customrad12), float(customrad13), float(customrad14), float(customrad15), float(customrad16), float(customrad17), float(customrad18), float(customrad19), float(customrad20), float(customrad21), float(customrad22), float(customrad23), float(customrad0), float(customrad1), float(customrad2), float(customrad3), float(customrad4), float(customrad5)]
         if template == 'true':
             if lage_elec == True:
                 data0 = getFromDB('2022-05-26')
@@ -315,6 +315,8 @@ def run_python_code():
         result = "Dit is de uitvoer van de Python-code."
         global batpercentage
         global total_verbruikeAirco
+        if correctheid:
+            correctheid = 100 - correctheid
         batpercentage = bat1
         batpercentage = batpercentage[0:24]
         total_verbruikeAirco = sum(verbruikeAirco)/1000
@@ -352,8 +354,8 @@ def run_python_code():
                 verbruikte_energie_wasmachine.append(0)
         for i in keuken_verbruik:
             if i == 1:
-                verbruikte_energie_keuken.append(2100)
-                totaal_verbruikte_energie_keuken = totaal_verbruikte_energie_keuken + 2100
+                verbruikte_energie_keuken.append(3390)
+                totaal_verbruikte_energie_keuken = totaal_verbruikte_energie_keuken + 3390
             else:
                 verbruikte_energie_keuken.append(0)
         verbruikte_energie = [verbruikte_energie_auto[i] + verbruikte_energie_wasmachine[i]+verbruikte_energie_keuken[i] + verbruikwarmtepomp[i*2]/2 + verbruikeAirco[i*2+1]/2 +verbruikeAirco[i*2]/2 + verbruikwarmtepomp[i*2+1]/2 for i in range(24)]
@@ -375,6 +377,8 @@ def run_python_code():
         gemiddeldeElektriciteitsprijs = round(gemiddeldeElektriciteitsprijs,5)
         kost_zonderOP = custom_dag(dataprijs,rad,thuis_zijn,airco_knop,wasmachine_knop,auto_knop,keuken_boolean,temp)
         kost_zonderOP = round(kost_zonderOP,2)
+        if kost_zonderOP < totale_prijs_energie:
+            kost_zonderOP = totale_prijs_energie
         kostverschil = kost_zonderOP - totale_prijs_energie
         kostverschil = round(kostverschil,2)
         for i in range(len(verbruikte_energie)):
@@ -442,14 +446,14 @@ def pagina3():
     c = '[OV] ' + '['+keukenbooleanforserver+ ']'
     d ='[HE] ' + '[' +wpbooleanforserver+ ']'
     e = '[AC] ' + '['+aircobooleanforserver+ ']'
-    '''msg = a
+    msg = a
     conn.send(msg.encode(FORMAT))
 
     if msg == DISCONNECT_MSG:
          connected = False
     else:
         msg = conn.recv(SIZE).decode(FORMAT)
-        print(f"[SERVER] {msg}")'''
+        print(f"[SERVER] {msg}")
     msg = b
     conn.send(msg.encode(FORMAT))
 
@@ -466,7 +470,7 @@ def pagina3():
     else:
         msg = conn.recv(SIZE).decode(FORMAT)
         print(f"[SERVER] {msg}")
-    '''msg = d
+    msg = d
     conn.send(msg.encode(FORMAT))
 
     if msg == DISCONNECT_MSG:
@@ -481,10 +485,10 @@ def pagina3():
          connected = False
     else:
         msg = conn.recv(SIZE).decode(FORMAT)
-        print(f"[SERVER] {msg}")'''
+        print(f"[SERVER] {msg}")
     return render_template('index.html', selectedDate=selected_date, result=result ,keuken=keuken,totaal_opgewekte_energie=totaal_opgewekte_energie, totaal_verbruikte_energie = totaal_verbruikte_energie,totale_prijs_energie=totale_prijs_energie,gemiddeldeElektriciteitsprijs=gemiddeldeElektriciteitsprijs,kost_zonderOP=kost_zonderOP,kostverschil=kostverschil)
 if __name__ == '__main__':
-    app.run()
+    app.run(host = '192.168.0.220')
 #host='192.168.98.15'
 
 

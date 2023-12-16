@@ -124,7 +124,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     for i in zonne_energie:
         if i > 7000:
             zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
-    zonne_energie = [i *0.9 for i in zonne_energie]
+    zonne_energie = [i *0.85 for i in zonne_energie]
 
     #horizon implementatie
     current_time = start_time                                                       #houdt de huidige tijd bij

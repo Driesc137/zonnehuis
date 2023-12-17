@@ -88,8 +88,8 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
         batmax = 10000                     #maximale batterijcapaciteit (kWh)
         batmin = 0                      #minimale batterijcapaciteit (kWh)
         bat0 = 0                        #begintoestand batterij (kWh)
-        batmaxcharge = batmax                #maximale laadsnelheid batterij (kW)
-        batmaxdischarge = batmax             #maximale ontlaadsnelheid batterij (kW)
+        batmaxcharge = batmax/2                #maximale laadsnelheid batterij (kW)
+        batmaxdischarge = batmax/2             #maximale ontlaadsnelheid batterij (kW)
     else:
         batmax = 0                     #maximale batterijcapaciteit (kWh)
         batmin = 0                      #minimale batterijcapaciteit (kWh)
@@ -124,7 +124,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     for i in zonne_energie:
         if i > 7000:
             zonne_energie[zonne_energie.index(i)] = 7000  # maximum vermogen van zonnepanelen is 4750 W
-    zonne_energie = [i *0.85 for i in zonne_energie]
+    zonne_energie = [i *0.9 for i in zonne_energie]
 
     #horizon implementatie
     current_time = start_time                                                       #houdt de huidige tijd bij
@@ -213,63 +213,60 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     actions['batstate'].append(bat0)
 
     # foutcontrole
-    T_in_np = np.array(T_in_simulatie)
-    T_time_np = np.array(T_time_simulatie)
-    if thuis:
-        int_arr_down = np.array([])
-        int_arr_up = np.array([])
-        mask = T_in_np < T_in_min
-        int_arr_down = T_in_np[mask]
-        if len(int_arr_down) == 0:
-            err_down = 0
-        else:
-            err_down = integrate.simpson(np.full(len(int_arr_down),T_in_min)) - integrate.simpson(int_arr_down)
-        mask = T_in_np > T_in_max
-        int_arr_up = T_in_np[mask]
-        if len(int_arr_up) == 0:
-            err_up = 0
-        else:
-            err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
-        tot_opp = (T_in_max- T_in_min) * (14*60*60)
-        tot_fout = ((err_down+ err_up)/tot_opp)*100
+    if wp_boolean:
+        T_in_np = np.array(T_in_simulatie)
+        T_time_np = np.array(T_time_simulatie)
+        if thuis:
+            int_arr_down = np.array([])
+            int_arr_up = np.array([])
+            mask = T_in_np < T_in_min
+            int_arr_down = T_in_np[mask]
+            if len(int_arr_down) == 0:
+                err_down = 0
+            else:
+                err_down = integrate.simpson(np.full(len(int_arr_down),T_in_min)) - integrate.simpson(int_arr_down)
+            mask = T_in_np > T_in_max
+            int_arr_up = T_in_np[mask]
+            if len(int_arr_up) == 0:
+                err_up = 0
+            else:
+                err_up = integrate.simpson(int_arr_up) - integrate.simpson(np.full(len(int_arr_up),T_in_max))
+            tot_opp = (T_in_max- T_in_min) * (24*60*60)
+            tot_fout = ((err_down+ err_up)/tot_opp)*100
 
+        else:
+            int_arr_down_home = np.array([])
+            int_arr_up_home = np.array([])
+            int_arr_down_nothome = np.array([])
+            int_arr_up_nothome = np.array([])
+
+            mask = T_in_np[aankomst*3600:vertrek*3600] < T_in_min
+            int_arr_down_home = T_in_np[aankomst*3600:vertrek*3600][mask]
+            if len(int_arr_down_home) == 0:
+                err_down_home = 0
+            else:
+                err_down_home = integrate.simpson(np.full(len(int_arr_down_home),T_in_min)) - integrate.simpson(int_arr_down_home)
+            mask = T_in_np[aankomst*3600:vertrek*3600] > T_in_max
+            int_arr_up_home = T_in_np[aankomst*3600:vertrek*3600][mask]
+            if len(int_arr_up_home) == 0:
+                err_up_home = 0
+            else:
+                err_up_home = integrate.simpson(int_arr_up_home) - integrate.simpson(np.full(len(int_arr_up_home),T_in_max))
+            mask = T_in_np[:aankomst*3600] < T_nothome_min
+            int_arr_down_nothome = T_in_np[:aankomst*3600][mask]
+            if len(int_arr_down_nothome) == 0:
+                err_down_nothome = 0
+            else:
+                err_down_nothome = integrate.simpson(np.full(len(int_arr_down_nothome),T_nothome_min)) - integrate.simpson(int_arr_down_nothome)
+            mask = T_in_np[:aankomst*3600] > T_nothome_max
+            int_arr_up_nothome = T_in_np[:aankomst*3600][mask]
+            if len(int_arr_up_nothome) == 0:
+                err_up_nothome = 0
+            else:
+                err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome),T_nothome_max))
+            tot_fout = ((err_down_home+err_up_home)/((T_in_max-T_in_min)*(vertrek-aankomst)*60*60) + (err_down_nothome+err_up_nothome)/((T_nothome_max-T_nothome_min)*((24-(vertrek-aankomst))*60*60)))*100
     else:
-        int_arr_down_home = np.array([])
-        int_arr_up_home = np.array([])
-        int_arr_down_nothome = np.array([])
-        int_arr_up_nothome = np.array([])
-
-        mask = T_in_np[aankomst*3600:vertrek*3600] < T_in_min
-        int_arr_down_home = T_in_np[aankomst*3600:vertrek*3600][mask]
-        if len(int_arr_down_home) == 0:
-            err_down_home = 0
-        else:
-            err_down_home = integrate.simpson(np.full(len(int_arr_down_home),T_in_min)) - integrate.simpson(int_arr_down_home)
-        mask = T_in_np[aankomst*3600:vertrek*3600] > T_in_max
-        int_arr_up_home = T_in_np[aankomst*3600:vertrek*3600][mask]
-        if len(int_arr_up_home) == 0:
-            err_up_home = 0
-        else:
-            err_up_home = integrate.simpson(int_arr_up_home) - integrate.simpson(np.full(len(int_arr_up_home),T_in_max))
-        mask = T_in_np[:aankomst*3600] < T_nothome_min
-        int_arr_down_nothome = T_in_np[:aankomst*3600][mask]
-        if len(int_arr_down_nothome) == 0:
-            err_down_nothome = 0
-        else:
-            err_down_nothome = integrate.simpson(np.full(len(int_arr_down_nothome),T_nothome_min)) - integrate.simpson(int_arr_down_nothome)
-        mask = T_in_np[:aankomst*3600] > T_nothome_max
-        int_arr_up_nothome = T_in_np[:aankomst*3600][mask]
-        if len(int_arr_up_nothome) == 0:
-            err_up_nothome = 0
-        else:
-            err_up_nothome = integrate.simpson(int_arr_up_nothome) - integrate.simpson(np.full(len(int_arr_up_nothome),T_nothome_max))
-        tot_fout = ((err_down_home+err_up_home)/((T_in_max-T_in_min)*(vertrek-aankomst)*60*60) + (err_down_nothome+err_up_nothome)/((T_nothome_max-T_nothome_min)*(24-(vertrek-aankomst)*60*60)))*100
-
-    if thuis:
-        fout_result = {'err_down': err_down, 'err_up': err_up}
-    else:
-        fout_result = {'err_down_home': err_down_home, 'err_up_home': err_up_home, 'err_down_nothome': err_down_nothome,'err_up_nothome': err_up_nothome}
-
+        tot_fout = 0
     #optimalisatie laatste keer
     T_in_simulatie = [i - 273.15 for i in T_in_simulatie]
     T_m_simulatie = [i - 273.15 for i in T_m_simulatie]
@@ -308,10 +305,10 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     esell_final_sum = sum(esell_final)
 
     #batstate in %
-    if batmax == 0:
-        batstate_final = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    else:
+    if bat_boolean:
         batstate_final = [(i/batmax)*100 for i in batstate_final]
+    else:
+        batstate_final = list(np.zeros(25))
 
     zonne_energie_sum = sum(zonne_energie)
     #bereken de kostrpijs_energie met de data opgeslagen in actions

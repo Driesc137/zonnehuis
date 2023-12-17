@@ -96,6 +96,16 @@ def run_python_code():
     if request.method == 'POST':
         global selected_date
         selected_date = request.form['selectedDate']
+        if selected_date != '':
+            
+
+        # Parse the date string to a datetime object
+            selected_date = datetime.strptime(selected_date, '%Y-%m-%d')
+        
+
+# Set the year to 2022
+            selected_date = selected_date.replace(year=2022)
+            selected_date = selected_date.strftime('%Y-%m-%d')
         # Voer hier je Python-code uit en retourneer het resultaat
         #print(str(selected_date))
         global button1 #datum

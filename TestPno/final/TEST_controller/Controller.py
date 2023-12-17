@@ -38,7 +38,7 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
     M = 1000                        # grote M. Wat is dit?
     ewm = 2.5                       # verbruik wasmachine (kW = kWh/h)
     eau = 7.4                       # vermogen laadpaal (kW)
-    ekeuken = 2.11                   # vermogen keuken (kW)
+    ekeuken = 3.3905                   # vermogen keuken (kW)
     start_time = 0                  # Begin met tijd = 0
     total_time = 24                 # Totaal aantal uren die geoptimaliseerd moeten worden
     if thuis:
@@ -152,9 +152,9 @@ def controller(tempinput,priceinput,radiationinput,wm_boolean,auto_boolean, keuk
             opslag_resultaat['Iteratie', current_time] = optimaliseer(new_horizon, irradiantie[current_time:horizon_end], netstroom[current_time:horizon_end], zonne_energie[current_time:horizon_end], ewm, eau, ekeuken, delta_t, M, wm_aan, auto_aan, keuken_aan, T_in_0, T_m_0, temp_out[current_time: horizon_end], P_max, P_max_airco, T_in_min, T_in_max, T_m_min, T_m_max, T_nothome_min, T_nothome_max, thuis, aankomst, vertrek, keuken_begin, keuken_einde, batmax, batmin, batmaxcharge, batmaxdischarge, bat0)     #optimalisatie a.d.h.v. benadering
 
         #controleer de acties die de controller heeft gekozen voor dit interval, deze worden de beginvoorwaarden voor het volgende interval
-        wm_aan = wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0] #aantal uren dat de wasmachine nog aan moet staan
-        auto_aan = auto_aan - opslag_resultaat['Iteratie', current_time]['auto'][0] #aantal uren dat de auto nog aan moet staan
-        keuken_aan = keuken_aan - opslag_resultaat['Iteratie', current_time]['keuken'][0] #aantal uren dat de keuken nog aan moet staan
+        wm_aan = int(wm_aan - opslag_resultaat['Iteratie', current_time]['wm'][0]) #aantal uren dat de wasmachine nog aan moet staan
+        auto_aan = int(auto_aan - opslag_resultaat['Iteratie', current_time]['auto'][0]) #aantal uren dat de auto nog aan moet staan
+        keuken_aan = int(keuken_aan - opslag_resultaat['Iteratie', current_time]['keuken'][0]) #aantal uren dat de keuken nog aan moet staan
 
         # sla de resultaten van de optimalisatie voor de current time op. Deze worden de definitieve acties
         for i in attributes:

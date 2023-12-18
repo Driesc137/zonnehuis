@@ -112,7 +112,7 @@ const areaChartOptions = {
   yaxis: [
     {
       title: {
-        text: 'Energie (kWh)',
+        text: 'Energie (kW)',
       },
       labels: {
         formatter: function (val) {

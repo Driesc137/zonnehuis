@@ -327,6 +327,8 @@ def run_python_code():
         global total_verbruikeAirco
         if correctheid:
             correctheid = 100 - correctheid
+        else:
+            correctheid = 100
         batpercentage = bat1
         batpercentage = batpercentage[0:25]
         for x in batpercentage:
